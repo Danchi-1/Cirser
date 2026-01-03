@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+      - frontend
+
+  backend:
+    build: ./backend
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/cirser
+      - REDIS_URL=redis://redis:6379/0
+      - CHROMA_HOST=vector_db
+      - CHROMA_PORT=8000
+      # The AI_SERVICE_URL will be provided by the user at runtime or via .env
+      # after they start their Kaggle notebook.
+      - AI_SERVICE_URL=${AI_SERVICE_URL:-http://host.docker.internal:8888} 
+    depends_on:
+      - db
+      - vector_db
+      - redis
+
+  frontend:
+    build: ./frontend
+    environment:
+      - VITE_API_URL=/api/v1
+    # For development, we mount the volume to enable HMR
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=cirser
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  vector_db:
+    image: chromadb/chroma:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+
+  redis:
+    image: redis:alpine
+
+volumes:
+  postgres_data:
+  chroma_data:
