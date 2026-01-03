@@ -1,17 +1,23 @@
 import chromadb
 from chromadb.utils import embedding_functions
 from app.core.config import settings
-from app.services.rag.schema import Rule, RuleSearchResult, RuleSource
+from app.schemas.rule import Rule, RuleSearchResult, RuleSource
 import json
+import os
 
 class RAGRetriever:
     def __init__(self):
-        self.client = chromadb.HttpClient(
-            host=settings.CHROMA_HOST, 
-            port=settings.CHROMA_PORT
-        )
+        # Detect Mode
+        if settings.DEPLOYMENT_MODE == "lite":
+            print(f"Initializing ChromaDB in LITE mode at {settings.CHROMA_PERSIST_DIR}")
+            self.client = chromadb.PersistentClient(path=settings.CHROMA_PERSIST_DIR)
+        else:
+            self.client = chromadb.HttpClient(
+                host=settings.CHROMA_HOST, 
+                port=settings.CHROMA_PORT
+            )
+            
         self.collection_name = "cirser_rules"
-        # Using default embedding function for now (SentenceTransformers)
         self.embedding_fn = embedding_functions.DefaultEmbeddingFunction() 
         
         self.collection = self.client.get_or_create_collection(
@@ -24,12 +30,8 @@ class RAGRetriever:
         documents = [r.embedding_text for r in rules]
         metadatas = [r.model_dump(exclude={"embedding_text"}) for r in rules]
         
-        # Serialize nested dicts for Chroma compatibility if needed
-        # But Chroma handles standard JSON metadatas reasonably well usually.
-        # Ideally we flatten or store pure JSON string.
         formatted_metadatas = []
         for m in metadatas:
-            # Flatten or strict type conversion
             clean_m = {}
             for k, v in m.items():
                 if isinstance(v, (dict, list)):
@@ -57,7 +59,6 @@ class RAGRetriever:
             metadatas = results['metadatas'][0]
             
             for i, rule_id in enumerate(ids):
-                # Deserialization from metadata
                 meta = metadatas[i]
                 rule_data = {
                     "rule_id": rule_id,
@@ -69,11 +70,10 @@ class RAGRetriever:
                     "governing_equations": json.loads(meta.get("governing_equations")),
                     "constraints": json.loads(meta.get("constraints")),
                     "source": json.loads(meta.get("source")),
-                    "embedding_text": "" # Not strictly needed in result
+                    "embedding_text": "" 
                 }
                 
                 rule = Rule(**rule_data)
-                # Cosine distance to similarity (approximate)
                 similarity = 1 - distances[i] 
                 
                 candidates.append(RuleSearchResult(rule=rule, similarity_score=similarity))

@@ -1,5 +1,5 @@
 from app.services.rag.retriever import RAGRetriever
-from app.services.rag.schema import Rule, RuleSource
+from app.schemas.rule import Rule, RuleSource
 import json
 
 def seed():

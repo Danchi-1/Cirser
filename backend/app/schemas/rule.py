@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
+# --- Rule Schemas ---
 class RuleSource(BaseModel):
     title: str
     author: Optional[str] = None
@@ -17,7 +18,10 @@ class RuleBase(BaseModel):
     governing_equations: List[str]
     constraints: List[str]
     source: RuleSource
-    embedding_text: Optional[str] = None # Text used for vectorization
+    embedding_text: Optional[str] = None 
+
+    class Config:
+        from_attributes = True
 
 class Rule(RuleBase):
     pass

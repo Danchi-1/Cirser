@@ -1,0 +1,28 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "echo 'Starting Multi-Service Deployment'"
+
+# --- 1. Backend Service ---
+[[services]]
+name = "backend"
+path = "backend"
+builder = "dockerfile"
+startCommand = "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+  [services.env]
+  PORT = "8000"
+  AI_SERVICE_URL = "http://${{ai-service.RAILWAY_PRIVATE_DOMAIN}}:8000"
+  DATABASE_URL = "${{PostgreSQL.DATABASE_URL}}"
+  CHROMA_HOST = "${{ChromaDB.HOST}}"
+  CHROMA_PORT = "${{ChromaDB.PORT}}"
+
+# --- 2. AI Service ---
+[[services]]
+name = "ai-service"
+path = "ai_service"
+builder = "dockerfile"
+startCommand = "uvicorn main:app --host 0.0.0.0 --port 8000"
+
+# --- 3. Frontend Service (Usually deploy on Vercel, but can deploy here) ---
+# For Vercel, we don't define it here, we just use git integration.

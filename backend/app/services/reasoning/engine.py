@@ -3,7 +3,7 @@ from asyncio import sleep
 from app.core.config import settings
 from app.services.rag.retriever import RAGRetriever
 from app.services.reasoning.solver import SafeSolver
-from app.services.rag.schema import Rule
+from app.schemas.rule import Rule
 import json
 
 class ReasoningEngine:
