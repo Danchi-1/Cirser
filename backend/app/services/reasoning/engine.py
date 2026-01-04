@@ -28,31 +28,43 @@ class ReasoningEngine:
 
         # 2. System Prompt
         system_prompt = f"""
-        You are Cirser, an Electrical Engineering Reasoning Engine.
-        Use the provided RULES to solve the problem.
-        DO NOT hallucinate equations. Use the matching RuleID.
+        You are Cirser, a Senior AI Systems Architect and Electrical Engineering Reasoning Specialist.
+        Your goal is to produce physically correct, auditable, rule-grounded solutions.
         
+        CORE PRINCIPLES (NON-NEGOTIABLE):
+        1. PARAMETER DEFINITIONS ARE LAW: You MUST explicitely state definitions (e.g. Z11 = V1/I1 | I2=0). Translate this to physical boundary conditions (e.g. "Port 2 Open").
+        2. RULES ARE CONTRACTS: Check "Applicability Conditions" for every rule. If a rule is partial, REJECT IT.
+        3. RULE COMPETITION: Compare all candidate rules. Explain why one is chosen and others rejected.
+        4. SYMBOLIC COMPLETENESS: Equations must include ALL topological elements (e.g. Z_a + Z_b for T-network).
+        5. STRICT LOOP: SOLVE_SYMBOLIC -> OBSERVE -> EXPLAIN. Do not skip steps.
+
         Available Rules:
         {candidate_context}
         
-        if a rule applies, output a JSON plan:
+        OUTPUT FORMAT (Strict JSON):
         {{
-            "thought": "Brief analysis...",
-            "selected_rule_id": "RuleID",
+            "thought": "Deep analysis of the problem...",
+            "parameter_definition": "Formal definition (e.g. Z11 = V1/I1 | I2=0)",
+            "physical_interpretation": "Physical meaning (e.g. Port 2 open-circuited)",
+            "candidate_rules": ["List", "of", "RuleIDs"],
+            "selected_rule_id": "The Chosen One",
+            "rule_rejection_reasoning": "Why others failed",
+            "applicability_check": {{
+                "conditions_required": ["Line 1", "Line 2"],
+                "conditions_met": true,
+                "justification": "Why it applies"
+            }},
             "action": "SOLVE_SYMBOLIC" | "EXPLAIN" | "REFUSE",
-            "equation": "v_in - i*R", 
-            "variable": "v_in" (Target variable OR "EVAL" if purely numeric evaluation)
+            "equation": "Z_a + Z_b", 
+            "variable": "EVAL, Z_a=10, Z_b=20" 
         }}
         
-        IMPORTANT: 
-        - If user provides numbers, KEEP the equation SYMBOLIC (e.g., "v_in - i*R").
-        - Put the numbers in the "variable" field with "EVAL" prefix.
-        - Example: if R=100 and i=0.04, set equation="v_in - i*R" and variable="EVAL, R=100, i=0.04".
+        INSTRUCTIONS:
         - If you need a calculation, output "SOLVE_SYMBOLIC".
-        - The system will calculate the result and return it to you in the next message as an OBSERVATION.
-        - Once you receive the OBSERVATION, you MUST output an "EXPLAIN" action.
-        - In the "EXPLAIN" action, "thought" should contain the FULL verification and step-by-step derivation.
-        - EQUATION SYNTAX: Must be valid Python. Variable names CANNOT contain spaces. Use underscores (e.g., "Z_a", not "Z a").
+        - Put numbers in "variable" with "EVAL" prefix (e.g. "EVAL, R=100").
+        - The system will calculate and return an OBSERVATION.
+        - FAILURE to provide physical interpretations or applicability checks will result in system rejection.
+        - EQUATION SYNTAX: Valid Python. No spaces in variables (use "Z_a", not "Z a").
         """
 
         messages = [
@@ -99,6 +111,14 @@ class ReasoningEngine:
                             plan = json.loads(json_str)
                             
                             # Execute Logic
+                            
+                            # CODE-LEVEL AUDIT: Enforce strictly required fields for Engineering Rigor
+                            required_fields = ["parameter_definition", "physical_interpretation", "applicability_check"]
+                            if plan.get("action") == "SOLVE_SYMBOLIC":
+                                missing = [f for f in required_fields if f not in plan]
+                                if missing:
+                                    raise ValueError(f"ENGINEERING AUDIT FAILED: Missing required fields: {missing}. You must explicitly state definitions and applicability checks.")
+                                    
                             if plan.get("action") == "SOLVE_SYMBOLIC":
                                 variable_field = plan.get("variable", "")
                                 val = "Error in calculation"

@@ -148,11 +148,28 @@ function ChatInterface() {
       if (res.data.status === 'success') {
         const plan = res.data.plan;
 
+        let displayContent = plan.thought;
+
+        // Append Engineering Audit details if present
+        if (plan.parameter_definition || plan.applicability_check) {
+          displayContent += `\n\n---\n\n### 🛡️ Engineering Audit\n\n`;
+          if (plan.parameter_definition) displayContent += `> **Definition:** ${plan.parameter_definition}\n\n`;
+          if (plan.physical_interpretation) displayContent += `> **Physics:** ${plan.physical_interpretation}\n\n`;
+
+          if (plan.applicability_check) {
+            displayContent += `**Rule Check:**\n`;
+            if (plan.applicability_check.justification) displayContent += `- *Justification:* ${plan.applicability_check.justification}\n`;
+            displayContent += `- **Conditions Met:** ${plan.applicability_check.conditions_met ? '✅ Yes' : '❌ No'}\n`;
+          }
+        }
+
+        if (plan.action === 'SOLVE_SYMBOLIC') {
+          displayContent += `\n\n**Equation:** $${plan.equation}$\n\n**Result:** $${res.data.result}$`;
+        }
+
         addMessage({
           role: 'assistant',
-          content: plan.action === 'SOLVE_SYMBOLIC'
-            ? `${plan.thought}\n\n**Equation:** $${plan.equation}$\n\n**Result:** $${res.data.result}$`
-            : plan.thought
+          content: displayContent
         });
 
         if (res.data.candidates) {
