@@ -1,11 +1,8 @@
 services:
   - type: web
     name: cirser-backend
-    env: python
-    buildCommand: |
-      pip install -r backend/requirements.txt
-    startCommand: |
-       cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    env: docker
+    dockerContext: backend
     envVars:
       - key: PROJECT_NAME
         value: Cirser
@@ -14,12 +11,12 @@ services:
           name: cirser-db
           property: connectionString
       - key: AI_SERVICE_URL
-        value: http://localhost:10000/v1 # Calls itself via localhost since we merged it!
+        value: http://localhost:10000/v1
       - key: HF_API_KEY
-        sync: false # User must provide this in dashboard
+        sync: false
 
 databases:
   - name: cirser-db
     databaseName: cirser
     user: cirser_user
-    plan: free # Be aware of 30-day expiry
+    plan: free
