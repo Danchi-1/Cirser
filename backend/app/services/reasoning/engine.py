@@ -36,13 +36,13 @@ class ReasoningEngine:
         {candidate_context}
         
         if a rule applies, output a JSON plan:
-        {
+        {{
             "thought": "Brief analysis...",
             "selected_rule_id": "RuleID",
             "action": "SOLVE_SYMBOLIC" | "EXPLAIN" | "REFUSE",
             "equation": "v_in - i*R", 
             "variable": "v_in" (Target variable OR "EVAL" if purely numeric evaluation)
-        }
+        }}
         
         IMPORTANT: 
         - If the user provides numbers (e.g., R=100), SUBSTITUTE them yourself before outputting the equation.
