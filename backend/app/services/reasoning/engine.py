@@ -55,73 +55,82 @@ class ReasoningEngine:
             {"role": "user", "content": user_query}
         ]
 
-        # 3. Call AI
-        try:
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                headers = {"Authorization": f"Bearer {token}"}
-                response = await client.post(
-                    self.ai_url, 
-                    json={
-                        "messages": messages, 
-                        "tools": None 
-                    },
-                    headers=headers
-                )
-                response.raise_for_status()
-                result = response.json()
-                ai_content = result["choices"][0]["message"]["content"]
-                
-                # Parse JSON logic (Already patched)
-                try:
-                    # Strip Markdown code blocks if present
-                    if "```json" in ai_content:
-                        ai_content = ai_content.split("```json")[1].split("```")[0].strip()
-                    elif "```" in ai_content:
-                         ai_content = ai_content.split("```")[1].split("```")[0].strip()
-
-                    # Find first { and last }
-                    if start != -1 and end != 0:
-                        json_str = ai_content[start:end]
-                        plan = json.loads(json_str)
-                    else:
-                        raise ValueError("No JSON object found in response")
-                except Exception as e:
-                   print(f"WARNING: ID {str(e)} - Fallback to plain text.")
-                   # Fallback: Treat the entire response as an explanation
-                   plan = {
-                       "thought": "AI response was not in JSON format. Displaying raw output.",
-                       "selected_rule_id": "N/A",
-                       "action": "EXPLAIN",
-                       "equation": "",
-                       "variable": ""
-                   }
-                   # We append the original content content to the plan to be used by the frontend
-                   # But wait, the frontend expects 'result' or 'thought' from the plan.
-                   # Let's just pass the content as the 'thought' or add a new field.
-                   # Actually, let's just make the plan's 'thought' the content.
-                   plan["thought"] = ai_content
-                
-                # 4. Execute Plan
-                if plan.get("action") == "SOLVE_SYMBOLIC":
-                    if plan.get("variable") == "EVAL":
-                         # Pure numeric evaluation
-                         val = self.solver.evaluate_numeric(plan["equation"], {})
-                    else:
-                         # Symbolic solving
-                         val = self.solver.solve_symbolic(plan["equation"], plan["variable"])
+        # 3. Call AI with Retry Loop
+        MAX_RETRIES = 2
+        for attempt in range(MAX_RETRIES + 1):
+            try:
+                async with httpx.AsyncClient(timeout=60.0) as client:
+                    headers = {"Authorization": f"Bearer {token}"}
+                    response = await client.post(
+                        self.ai_url, 
+                        json={
+                            "messages": messages, 
+                            "tools": None 
+                        },
+                        headers=headers
+                    )
+                    response.raise_for_status()
+                    result = response.json()
+                    ai_content = result["choices"][0]["message"]["content"]
                     
-                    return {
-                        "status": "success",
-                        "plan": plan,
-                        "result": val,
-                        "candidates": [c.rule.model_dump() for c in candidates]
-                    }
-                else:
-                    return {
-                        "status": "success", 
-                        "plan": plan,
-                        "candidates": [c.rule.model_dump() for c in candidates]
-                    }
+                    # Parse JSON logic
+                    try:
+                        # Strip Markdown code blocks if present
+                        if "```json" in ai_content:
+                            ai_content = ai_content.split("```json")[1].split("```")[0].strip()
+                        elif "```" in ai_content:
+                             ai_content = ai_content.split("```")[1].split("```")[0].strip()
+    
+                        # Find first { and last }
+                        start = ai_content.find("{")
+                        end = ai_content.rfind("}") + 1
+                        
+                        if start != -1 and end != 0:
+                            json_str = ai_content[start:end]
+                            plan = json.loads(json_str)
+                            
+                            # Success! Execute Logic
+                            if plan.get("action") == "SOLVE_SYMBOLIC":
+                                if plan.get("variable") == "EVAL":
+                                     # Pure numeric evaluation
+                                     val = self.solver.evaluate_numeric(plan["equation"], {})
+                                else:
+                                     # Symbolic solving
+                                     val = self.solver.solve_symbolic(plan["equation"], plan["variable"])
+                                
+                                return {
+                                    "status": "success",
+                                    "plan": plan,
+                                    "result": val,
+                                    "candidates": [c.rule.model_dump() for c in candidates]
+                                }
+                            else:
+                                return {
+                                    "status": "success", 
+                                    "plan": plan,
+                                    "candidates": [c.rule.model_dump() for c in candidates]
+                                }
+
+                        else:
+                            raise ValueError("No JSON object found")
+                            
+                    except Exception as e:
+                        print(f"ATTEMPT {attempt+1} FAILED: {str(e)}")
+                        if attempt < MAX_RETRIES:
+                            # Add correction prompt and retry
+                            messages.append({"role": "assistant", "content": ai_content})
+                            messages.append({
+                                "role": "user", 
+                                "content": f"SYSTEM ERROR: Your response was not valid JSON. You MUST output ONLY a valid JSON object matching the schema. Fix the format.\nError details: {str(e)}"
+                            })
+                            continue
+                        else:
+                           raise ValueError(f"AI failed to generate valid JSON after {MAX_RETRIES+1} attempts.")
+            
+            except Exception as e:
+                # If network error, fail immediately (or retry if transient, but simplifying here)
+                 if attempt == MAX_RETRIES:
+                    return {"status": "error", "message": str(e)}
 
         except Exception as e:
             return {"status": "error", "message": str(e)}
