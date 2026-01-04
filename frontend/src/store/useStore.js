@@ -2,11 +2,17 @@ import { create } from 'zustand'
 
 const useStore = create((set) => ({
     // Auth State
-    token: localStorage.getItem('token') || null,
+    token: localStorage.getItem('cirser_token') || null,
     setToken: (token) => {
-        localStorage.setItem('token', token);
+        localStorage.setItem('cirser_token', token);
         set({ token });
     },
+    logout: () => {
+        localStorage.removeItem('cirser_token');
+        set({ token: null });
+    },
+
+    // Chat State
 
     // Chat State
     messages: [{ role: 'assistant', content: 'Connected to Cirser Core. State your problem.' }],

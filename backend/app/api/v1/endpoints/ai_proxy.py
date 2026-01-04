@@ -3,6 +3,13 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from huggingface_hub import InferenceClient
 from typing import List, Dict, Any
+from starlette.requests import Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from app.api import deps
+from fastapi import Depends
+
+limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter()
 
@@ -17,7 +24,12 @@ class InferenceRequest(BaseModel):
     temperature: float = 0.1
 
 @router.post("/chat/completions")
-async def proxy_chat_completion(req: InferenceRequest):
+@limiter.limit("10/minute")
+async def proxy_chat_completion(
+    req: InferenceRequest, 
+    request: Request,
+    current_user = Depends(deps.get_current_active_user)
+):
     """
     Internal Proxy to Hugging Face Inference API.
     This replaces the separate AI Service container.

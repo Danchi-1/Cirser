@@ -108,7 +108,7 @@ function RuleStack() {
 
 // --- 3. Chat Interface (Bottom Left) ---
 function ChatInterface() {
-  const { messages, addMessage, setActiveRules } = useStore();
+  const { messages, addMessage, setActiveRules, token } = useStore();
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef(null);
@@ -131,7 +131,11 @@ function ChatInterface() {
       // Use deployed URL or local fallback
       const API_URL = import.meta.env.VITE_API_URL || 'https://cirser.onrender.com/api/v1';
 
-      const res = await axios.post(`${API_URL}/chat/message`, { message: userMsg.content });
+      const res = await axios.post(
+        `${API_URL}/chat/message`,
+        { message: userMsg.content },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
       if (res.data.status === 'success') {
         const plan = res.data.plan;
@@ -254,7 +258,7 @@ function ControlStack() {
 }
 
 // --- Main Layout ---
-export default function App() {
+export default function MainApp() {
   return (
     <div className="w-screen h-screen relative bg-[#030712] text-white overflow-hidden font-sans selection:bg-cyan-500/30">
 
