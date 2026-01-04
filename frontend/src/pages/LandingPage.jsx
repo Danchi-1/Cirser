@@ -16,12 +16,12 @@ export default function LandingPage() {
             <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-violet-500/10 rounded-full blur-[120px] pointer-events-none" />
 
             {/* Navigation */}
-            <nav className="relative z-10 flex items-center justify-between px-6 py-6 md:px-12 max-w-7xl mx-auto">
+            <nav className="relative z-10 flex flex-col md:flex-row items-center justify-between px-6 py-6 md:px-12 max-w-7xl mx-auto gap-4 md:gap-0">
                 <div className="flex items-center gap-2">
                     <img src="/logo.png" alt="Cirser Logo" className="w-8 h-8 object-contain" />
                     <span className="text-xl font-bold tracking-tight">CIRSER</span>
                 </div>
-                <div className="flex items-center gap-6">
+                <div className="flex flex-wrap justify-center items-center gap-6">
                     <Link to="/about" className="text-sm text-slate-400 hover:text-white transition-colors">How it Works</Link>
                     <a href="https://github.com/Danchi-1/Cirser" target="_blank" className="text-sm text-slate-400 hover:text-white transition-colors">GitHub</a>
                     <Link to={token ? "/workspace" : "/login"}>

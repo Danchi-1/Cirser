@@ -48,8 +48,10 @@ class ReasoningEngine:
         - If user provides numbers, KEEP the equation SYMBOLIC (e.g., "v_in - i*R").
         - Put the numbers in the "variable" field with "EVAL" prefix.
         - Example: if R=100 and i=0.04, set equation="v_in - i*R" and variable="EVAL, R=100, i=0.04".
-        - ALWAYS choose "SOLVE_SYMBOLIC" if the user wants a calculation.
-        - EQUATION SYNTAX: Must be valid Python. Variable names CANNOT contain spaces. Use underscores (e.g., "Z_a", not "Z a").
+        - If you need a calculation, output "SOLVE_SYMBOLIC".
+        - The system will calculate the result and return it to you in the next message as an OBSERVATION.
+        - Once you receive the OBSERVATION, you MUST output an "EXPLAIN" action.
+        - In the "EXPLAIN" action, "thought" should contain the FULL verification and step-by-step derivation.
         - EQUATION SYNTAX: Must be valid Python. Variable names CANNOT contain spaces. Use underscores (e.g., "Z_a", not "Z a").
         """
 
@@ -59,8 +61,12 @@ class ReasoningEngine:
         ]
 
         # 3. Call AI with Retry Loop
-        MAX_RETRIES = 2
-        for attempt in range(MAX_RETRIES + 1):
+        # 3. Call AI with ReAct Loop
+        MAX_TURNS = 3
+        current_turn = 0
+        
+        while current_turn < MAX_TURNS:
+            current_turn += 1
             try:
                 async with httpx.AsyncClient(timeout=60.0) as client:
                     headers = {"Authorization": f"Bearer {token}"}
@@ -92,33 +98,38 @@ class ReasoningEngine:
                             json_str = ai_content[start:end]
                             plan = json.loads(json_str)
                             
-                            # Success! Execute Logic
-                            # Success! Execute Logic
+                            # Execute Logic
                             if plan.get("action") == "SOLVE_SYMBOLIC":
                                 variable_field = plan.get("variable", "")
+                                val = "Error in calculation"
                                 
-                                if variable_field.startswith("EVAL"):
-                                     # Extract parameters: "EVAL, R=100, i=0.04" -> {'R': 100.0, 'i': 0.04}
-                                     param_str = variable_field.replace("EVAL", "").strip()
-                                     # Remove leading comma if present
-                                     if param_str.startswith(","):
-                                         param_str = param_str[1:]
+                                try:
+                                    if variable_field.startswith("EVAL"):
+                                         # Extract parameters
+                                         param_str = variable_field.replace("EVAL", "").strip()
+                                         if param_str.startswith(","): param_str = param_str[1:]
+                                         params = self.solver.parse_variable_assignments(param_str)
                                          
-                                     params = self.solver.parse_variable_assignments(param_str)
-                                     
-                                     # Pure numeric evaluation with parameters
-                                     val = self.solver.evaluate_numeric(plan["equation"], params)
-                                else:
-                                     # Symbolic solving
-                                     val = self.solver.solve_symbolic(plan["equation"], variable_field)
+                                         # Pure numeric evaluation with parameters
+                                         val = self.solver.evaluate_numeric(plan["equation"], params)
+                                    else:
+                                         # Symbolic solving
+                                         val = self.solver.solve_symbolic(plan["equation"], variable_field)
+                                except Exception as calc_err:
+                                     val = f"Calculation Error: {str(calc_err)}"
+
+                                # RE-ACT: Feed result back to AI
+                                messages.append({"role": "assistant", "content": ai_content})
+                                messages.append({
+                                    "role": "user", 
+                                    "content": f"OBSERVATION: The solver returned the result: {val}.\n"
+                                               f"Now, please VERIFY if this makes sense and output an 'EXPLAIN' action."
+                                               f"In your explanation, SHOW THE FULL DERIVATION using the equation {plan['equation']} and the result."
+                                })
+                                continue # NEXT TURN
                                 
-                                return {
-                                    "status": "success",
-                                    "plan": plan,
-                                    "result": val,
-                                    "candidates": [c.rule.model_dump() for c in candidates]
-                                }
                             else:
+                                # EXPLAIN or REFUSE or Other -> Final Answer
                                 return {
                                     "status": "success", 
                                     "plan": plan,
@@ -126,25 +137,38 @@ class ReasoningEngine:
                                 }
 
                         else:
-                            raise ValueError("No JSON object found")
+                             # JSON Parsing Failed
+                             raise ValueError("No JSON object found")
                             
-                    except Exception as e:
-                        print(f"ATTEMPT {attempt+1} FAILED: {str(e)}")
-                        if attempt < MAX_RETRIES:
-                            # Add correction prompt and retry
-                            messages.append({"role": "assistant", "content": ai_content})
-                            messages.append({
-                                "role": "user", 
-                                "content": f"SYSTEM ERROR: Your response was not valid JSON. You MUST output ONLY a valid JSON object matching the schema. Fix the format.\nError details: {str(e)}"
-                            })
-                            continue
-                        else:
-                           raise ValueError(f"AI failed to generate valid JSON after {MAX_RETRIES+1} attempts.")
+                    except ValueError as ve:
+                        # JSON Retry Logic
+                        if current_turn >= MAX_TURNS:
+                             # Fallback on last attempt: Accept raw text as explanation
+                             print(f"MAX RETRIES ({MAX_TURNS}) REACHED: Falling back to raw text.")
+                             fallback_plan = {
+                                 "action": "EXPLAIN",
+                                 "thought": ai_content,
+                                 "equation": "N/A",
+                                 "variable": "N/A",
+                                 "selected_rule_id": "FALLBACK"
+                             }
+                             return {
+                                "status": "success",
+                                "plan": fallback_plan,
+                                "candidates": [c.rule.model_dump() for c in candidates]
+                             }
+
+                        messages.append({"role": "assistant", "content": ai_content})
+                        messages.append({
+                            "role": "user", 
+                            "content": f"SYSTEM ERROR: Your response was not valid JSON. You MUST output ONLY a valid JSON object matching the schema. Fix the format.\nError details: {str(ve)}"
+                        })
+                        continue 
             
             except Exception as e:
-                # If network error, fail immediately (or retry if transient, but simplifying here)
-                 if attempt == MAX_RETRIES:
-                    return {"status": "error", "message": str(e)}
+                return {"status": "error", "message": f"Turn {current_turn} Error: {str(e)}"}
+        
+        return {"status": "error", "message": "Max reasoning turns reached without final explanation."}
 
 
 

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import useStore from './store/useStore'
 import {
   Send, Activity, BookOpen, Settings, AlertCircle,
-  Cpu, Zap, X, ChevronRight, Play, RefreshCw
+  Cpu, Zap, X, ChevronRight, Play, RefreshCw, User, LogOut
 } from 'lucide-react'
 import axios from 'axios'
 import ReactMarkdown from 'react-markdown'
@@ -82,7 +82,7 @@ function RuleStack() {
   const { activeRules } = useStore()
 
   return (
-    <div className="absolute top-6 right-6 z-10 w-96 flex flex-col gap-3 pointer-events-none">
+    <div className="absolute top-20 right-6 z-10 w-96 flex flex-col gap-3 pointer-events-none">
       <AnimatePresence>
         {activeRules.map((rule) => (
           <motion.div
@@ -269,6 +269,58 @@ function ControlStack() {
   )
 }
 
+// --- 5. Header / User Menu (Top Right) ---
+function UserMenu() {
+  const { logout, token } = useStore()
+  const [isOpen, setIsOpen] = useState(false)
+
+  // Close formatting on click outside could be added here, simplified for now
+
+  if (!token) return null;
+
+  return (
+    <div className="absolute top-6 right-6 z-50 pointer-events-auto">
+      <div className="relative">
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 p-0.5 shadow-lg shadow-cyan-500/20 hover:scale-105 transition-transform"
+        >
+          <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center">
+            <User size={20} className="text-cyan-400" />
+          </div>
+        </button>
+
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="absolute right-0 mt-2 w-48 bg-slate-800 border border-slate-700 rounded-xl shadow-xl overflow-hidden"
+            >
+              <div className="p-3 border-b border-white/5">
+                <p className="text-xs text-slate-500 font-mono uppercase">Signed In</p>
+                <p className="text-sm font-bold text-white truncate">User</p>
+              </div>
+              <div className="p-1">
+                <button className="w-full text-left px-3 py-2 text-sm text-slate-300 hover:bg-white/5 rounded-lg flex items-center gap-2 transition-colors">
+                  <User size={14} /> Profile
+                </button>
+                <button
+                  onClick={() => { logout(); setIsOpen(false); }}
+                  className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg flex items-center gap-2 transition-colors"
+                >
+                  <LogOut size={14} /> Sign Out
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  )
+}
+
 // --- Main Layout ---
 export default function MainApp() {
   return (
@@ -280,6 +332,7 @@ export default function MainApp() {
       {/* Foreground UI Layer */}
       <div className="absolute inset-0 z-10 pointer-events-none p-6 flex flex-col justify-end">
         {/* Top Layer is managed absolute by RuleStack */}
+        <UserMenu />
         <RuleStack />
 
         {/* Bottom Layer: Main Interaction Zone */}
