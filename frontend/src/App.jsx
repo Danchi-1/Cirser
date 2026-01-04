@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Grid } from '@react-three/drei'
-import useStore from '../store/useStore'
+import useStore from './store/useStore'
 import { Send, AlertTriangle, CheckCircle, Info } from 'lucide-react'
 import axios from 'axios'
 
