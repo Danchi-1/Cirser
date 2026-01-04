@@ -87,16 +87,22 @@ class SafeSolver:
         Evaluates a symbolic expression with numeric parameters.
         """
         try:
+            # Sanitize expression: Remove spaces to handle cases like "Z a" -> "Za"
+            sanitized_expr = expression_str.replace(" ", "")
             expr = parse_expr(
-                expression_str,
+                sanitized_expr,
                 transformations=self.transformations,
                 global_dict={}, 
                 local_dict=self.allowed_locals
             )
             
             # Substitute
-            # Ensure params keys are Symbols
-            subs_dict = {sympy.Symbol(k): v for k, v in params.items()}
+            # Ensure params keys are Symbols AND sanitized (remove spaces from keys too)
+            subs_dict = {}
+            for k, v in params.items():
+                clean_k = k.replace(" ", "")
+                subs_dict[sympy.Symbol(clean_k)] = v
+                
             result = expr.evalf(subs=subs_dict)
             
             return float(result)

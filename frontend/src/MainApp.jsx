@@ -163,7 +163,17 @@ function ChatInterface() {
           }
         }
 
+        // Append Reasoning Trace (Calculation Steps)
+        if (res.data.reasoning_steps && res.data.reasoning_steps.length > 0) {
+          displayContent += `\n\n---\n\n### 🔢 Calculation Steps\n\n`;
+          res.data.reasoning_steps.forEach(step => {
+            displayContent += `**Step ${step.step}:** ${step.thought}\n`;
+            displayContent += `> $${step.equation} = ${step.result}$\n\n`;
+          });
+        }
+
         if (plan.action === 'SOLVE_SYMBOLIC') {
+          // This fallback is mostly for single-step solves without EXPLAIN
           displayContent += `\n\n**Equation:** $${plan.equation}$\n\n**Result:** $${res.data.result}$`;
         }
 
@@ -290,10 +300,15 @@ function ControlStack() {
 
 // --- 5. Header / User Menu (Top Right) ---
 function UserMenu() {
-  const { logout, token } = useStore()
+  const { logout, token, user, fetchUser } = useStore()
   const [isOpen, setIsOpen] = useState(false)
 
-  // Close formatting on click outside could be added here, simplified for now
+  // Fetch user on mount if we have a token but no user data
+  useEffect(() => {
+    if (token && !user) {
+      fetchUser();
+    }
+  }, [token, user]);
 
   if (!token) return null;
 
@@ -304,8 +319,8 @@ function UserMenu() {
           onClick={() => setIsOpen(!isOpen)}
           className="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 p-0.5 shadow-lg shadow-cyan-500/20 hover:scale-105 transition-transform"
         >
-          <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center">
-            <User size={20} className="text-cyan-400" />
+          <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center font-bold text-xs text-cyan-400">
+            {user ? (user.full_name ? user.full_name[0].toUpperCase() : user.email[0].toUpperCase()) : <User size={20} />}
           </div>
         </button>
 
@@ -318,8 +333,8 @@ function UserMenu() {
               className="absolute right-0 mt-2 w-48 bg-slate-800 border border-slate-700 rounded-xl shadow-xl overflow-hidden"
             >
               <div className="p-3 border-b border-white/5">
-                <p className="text-xs text-slate-500 font-mono uppercase">Signed In</p>
-                <p className="text-sm font-bold text-white truncate">User</p>
+                <p className="text-xs text-slate-500 font-mono uppercase">Signed In As</p>
+                <p className="text-sm font-bold text-white truncate">{user ? (user.full_name || user.email) : 'Loading...'}</p>
               </div>
               <div className="p-1">
                 <button className="w-full text-left px-3 py-2 text-sm text-slate-300 hover:bg-white/5 rounded-lg flex items-center gap-2 transition-colors">

@@ -76,6 +76,7 @@ class ReasoningEngine:
         # 3. Call AI with ReAct Loop
         MAX_TURNS = 3
         current_turn = 0
+        reasoning_steps = []
         
         while current_turn < MAX_TURNS:
             current_turn += 1
@@ -138,13 +139,30 @@ class ReasoningEngine:
                                 except Exception as calc_err:
                                      val = f"Calculation Error: {str(calc_err)}"
 
-                                # RE-ACT: Feed result back to AI
+                                # Record this step in the trace
+                                reasoning_steps.append({
+                                    "step": len(reasoning_steps) + 1,
+                                    "thought": plan.get("thought", "Calculating..."),
+                                    "equation": plan["equation"],
+                                    "result": val,
+                                    "rule_id": plan.get("selected_rule_id", "Unknown")
+                                })
+
+                                # RE-ACT: Feed result back to AI with "Rich Observation"
                                 messages.append({"role": "assistant", "content": ai_content})
+                                
+                                # Contextualize the result for the AI
+                                verification_context = f"Equation '{plan['equation']}' evaluated with {variable_field}."
+                                
                                 messages.append({
                                     "role": "user", 
-                                    "content": f"OBSERVATION: The solver returned the result: {val}.\n"
-                                               f"Now, please VERIFY if this makes sense and output an 'EXPLAIN' action."
-                                               f"In your explanation, SHOW THE FULL DERIVATION using the equation {plan['equation']} and the result."
+                                    "content": f"OBSERVATION: {verification_context}\n"
+                                               f"Solver Result: {val}\n\n"
+                                               f"CRITICAL INSTRUCTION: Compare this result against the constraints of Rule {plan.get('selected_rule_id', 'Unknown')}.\n"
+                                               f"- Does the magnitude make physical sense?\n"
+                                               f"- Does it satisfy the boundary conditions?\n"
+                                               f"If YES: Output an 'EXPLAIN' action with the full derivation.\n"
+                                               f"If NO: Output a corrected 'SOLVE_SYMBOLIC' plan."
                                 })
                                 continue # NEXT TURN
                                 
@@ -153,6 +171,7 @@ class ReasoningEngine:
                                 return {
                                     "status": "success", 
                                     "plan": plan,
+                                    "reasoning_steps": reasoning_steps,
                                     "candidates": [c.rule.model_dump() for c in candidates]
                                 }
 
