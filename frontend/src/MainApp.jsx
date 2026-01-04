@@ -189,9 +189,13 @@ function ChatInterface() {
               ? 'bg-cyan-600/20 border border-cyan-500/30 text-cyan-50 rounded-br-none'
               : 'bg-slate-800/50 border border-slate-700 text-slate-200 rounded-bl-none'
               }`}>
-              <div className="whitespace-pre-wrap font-mono text-sm">
+              <ReactMarkdown
+                remarkPlugins={[remarkMath]}
+                rehypePlugins={[rehypeKatex]}
+                className="prose prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-black/50 prose-pre:border prose-pre:border-white/10"
+              >
                 {m.content}
-              </div>
+              </ReactMarkdown>
             </div>
           </motion.div>
         ))}

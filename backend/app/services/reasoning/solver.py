@@ -53,6 +53,13 @@ class SafeSolver:
             )
             
             target_var = sympy.Symbol(variable_str)
+            
+            # Robustness Check:
+            # If the expression is purely numeric (no variables) and doesn't contain the target,
+            # the AI likely outputted an expression to evaluate (e.g. "10 + 50") instead of an equation equal to zero.
+            if not expr.free_symbols and not expr.has(target_var):
+                return str(float(expr))
+
             solution = sympy.solve(expr, target_var)
             
             return str(solution)

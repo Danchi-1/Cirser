@@ -45,9 +45,11 @@ class ReasoningEngine:
         }}
         
         IMPORTANT: 
-        - If the user provides numbers (e.g., R=100), SUBSTITUTE them yourself before outputting the equation.
-        - Example: if R=100 and i=0.04, return equation "2.5 - 0.04*100" and variable "EVAL".
+        - If user provides numbers, KEEP the equation SYMBOLIC (e.g., "v_in - i*R").
+        - Put the numbers in the "variable" field with "EVAL" prefix.
+        - Example: if R=100 and i=0.04, set equation="v_in - i*R" and variable="EVAL, R=100, i=0.04".
         - ALWAYS choose "SOLVE_SYMBOLIC" if the user wants a calculation.
+        - EQUATION SYNTAX: Must be valid Python. Variable names CANNOT contain spaces. Use underscores (e.g., "Z_a", not "Z a").
         - EQUATION SYNTAX: Must be valid Python. Variable names CANNOT contain spaces. Use underscores (e.g., "Z_a", not "Z a").
         """
 
@@ -91,13 +93,24 @@ class ReasoningEngine:
                             plan = json.loads(json_str)
                             
                             # Success! Execute Logic
+                            # Success! Execute Logic
                             if plan.get("action") == "SOLVE_SYMBOLIC":
-                                if plan.get("variable") == "EVAL":
-                                     # Pure numeric evaluation
-                                     val = self.solver.evaluate_numeric(plan["equation"], {})
+                                variable_field = plan.get("variable", "")
+                                
+                                if variable_field.startswith("EVAL"):
+                                     # Extract parameters: "EVAL, R=100, i=0.04" -> {'R': 100.0, 'i': 0.04}
+                                     param_str = variable_field.replace("EVAL", "").strip()
+                                     # Remove leading comma if present
+                                     if param_str.startswith(","):
+                                         param_str = param_str[1:]
+                                         
+                                     params = self.solver.parse_variable_assignments(param_str)
+                                     
+                                     # Pure numeric evaluation with parameters
+                                     val = self.solver.evaluate_numeric(plan["equation"], params)
                                 else:
                                      # Symbolic solving
-                                     val = self.solver.solve_symbolic(plan["equation"], plan["variable"])
+                                     val = self.solver.solve_symbolic(plan["equation"], variable_field)
                                 
                                 return {
                                     "status": "success",

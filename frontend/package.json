@@ -12,6 +12,7 @@
   "dependencies": {
     "@react-three/drei": "^9.88.0",
     "@react-three/fiber": "^8.15.0",
+    "@tailwindcss/typography": "^0.5.19",
     "axios": "^1.6.0",
     "clsx": "^2.0.0",
     "framer-motion": "^10.16.4",
