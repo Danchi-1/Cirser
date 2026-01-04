@@ -18,7 +18,8 @@ export default function LoginPage() {
         setIsLoading(true);
 
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'https://cirser.onrender.com/api/v1';
+            const BASE_URL = (import.meta.env.VITE_API_URL || 'https://cirser.onrender.com/api/v1').replace(/\/$/, '');
+            const API_URL = BASE_URL;
 
             const formData = new URLSearchParams();
             formData.append('username', email);
