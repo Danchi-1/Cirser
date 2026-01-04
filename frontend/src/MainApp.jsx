@@ -148,8 +148,8 @@ function ChatInterface() {
 
         addMessage({
           role: 'assistant',
-          content: plan.action === 'solve_symbolic'
-            ? `Calculated Result: ${res.data.result}`
+          content: plan.action === 'SOLVE_SYMBOLIC'
+            ? `${plan.thought}\n\n**Equation:** $${plan.equation}$\n\n**Result:** $${res.data.result}$`
             : plan.thought
         });
 
