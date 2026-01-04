@@ -2,65 +2,102 @@
 
 **Cirser** is a deployable, secure, rule-grounded Electrical Engineering reasoning system with interactive simulation-level visualization. Unlike standard chatbots, Cirser does not hallucinate answers; it constructs solutions by retrieving formal engineering rules, validating them against constraints, and delegating computation to symbolic solvers.
 
-## System Architecture
-
-The system operates on a strict **Microservices Architecture** with a **5-Stack Frontend** and an **Isolated Inference Engine**.
-
-### 1. The Reasoning Core (Backend)
-The backend is not a black box. It enforces a mandatory 6-stage pipeline for every user request:
-1.  **Problem Classification**: Determines the domain (e.g., Linear Circuit Theory, Two-Port Networks).
-2.  **RAG Retrieval**: Retrieves formal rules (candidates) from the Vector Database based on semantic checking.
-3.  **Rule Selection (Agentic)**: The AI Agent selects the single best-fitting rule, citing its source (book/section) and justifying why it applies over others.
-4.  **Equation Construction**: Symbolic equations are extracted from the rule definition.
-5.  **Delegated Solving**: The system uses a strict Symbolic Math Engine (SymPy) to solve equations. **The LLM never performs math.**
-6.  **Validation**: Results are checked for physical feasibility (e.g., Passivity, Linearity) before return.
-
-### 2. The 5-Stack Frontend
-The user interface is strictly strictly layered to separate concerns:
-1.  **Simulation Stack**: WebGL/Three.js physics rendering (Node voltages, Branch currents).
-2.  **Rule Stack**: Displays the specific engineering rule currently governing the simulation state.
-3.  **Parameter Stack**: Control surfaces for component values ($R$, $L$, $C$). Changes trigger real-time backend validation.
-4.  **Inspector Stack**: Precise numeric introspection of nodes and ports.
-5.  **Validation Stack**: Visual error states (e.g., Red flash on KCL violation).
-
-### 3. Isolated AI Inference
-To ensure security and auditability:
-- The AI Model (e.g., Qwen-2.5-7B, DeepSeek-Coder) is hosted in a completely separate environment (e.g., Google Colab T4 Node).
-- The Main Backend communicates with the AI service via a secured ephemeral tunnel.
-- The AI Service has no direct access to the frontend or user database.
-
-## Security & compliance
-Designed for professional audit:
-- **No Chat History Memory**: Every request is reasoned about independently to prevent context poisoning.
-- **Rule-Grounding**: Every output must cite a governing rule from the vetted knowledge base.
-- **Safe Math**: `eval()` is strictly banned. Math is parsed via a restricted Abstract Syntax Tree (AST).
+**Live Demo**: [https://cirser.vercel.app](https://cirser.vercel.app)
 
 ---
 
-## Local Development (Lite Mode)
+## 🚀 Key Features
 
-For development and testing without a full container orchestration cluster, Cirser runs in **Lite Mode**.
-This uses **SQLite** and **Embedded ChromaDB** to run entirely on the host machine.
+### 1. Rule-Grounded Reasoning
+The system never "guesses". It enforces a strict pipeline:
+- **Retrieval**: Fetches formal laws (KVL, Ohm's Law) from a vector database.
+- **Planning**: The AI acts as an orchestrator, selecting the correct rule and variables.
+- **Symbolic Solving**: Math is delegated to **SymPy**, ensuring 100% algebraic precision.
+
+### 2. Premium 5-Stack UI
+A glassmorphic, "Electric Dark" interface built with **React**, **Three.js**, and **Framer Motion**:
+- **Simulation Stack**: 3D Visualization of circuit nodes.
+- **Rule Stack**: Context-aware cards that appear when rules are applied.
+- **Chat Stack**: Logic-aware conversation interface.
+- **Control Stack**: real-time parameter tuning (Frequency, Voltage).
+
+### 3. Enterprise-Grade Security
+- **Authentication**: Full JWT-based Login/Signup system.
+- **Protection**: All API endpoints are protected (guest access revoked).
+- **Rate Limiting**:
+    - Chat Endpoint: **20 req/min**
+    - AI Proxy: **10 req/min** (Protects LLM Quota)
+
+---
+
+## 🏗️ System Architecture
+
+The system is deployed using a decoupled **Microservices** pattern:
+
+### **Frontend (Vercel)**
+- **Tech**: React, Vite, TailwindCSS, Framer Motion, Three.js.
+- **Role**: Handles UI, Auth State (JWT), and Visualization.
+- **Security**: Routes are protected; unauthenticated users are redirected to Landing Page.
+
+### **Backend (Render)**
+- **Tech**: FastAPI, Python 3.10, PostgreSQL (via Render), ChromaDB (Embedded).
+- **Role**:
+    - **API Gateway**: manages Auth and Rate Limiting.
+    - **RAG Engine**: Retrieves and ranks engineering rules.
+    - **Internal AI Proxy**: Communicates with Hugging Face Inference API (Qwen-2.5-72B).
+    - **Symbolic Engine**: Solves the math via SymPy.
+
+---
+
+## 🛠️ Local Development
 
 ### Prerequisites
-1.  **Python 3.10+**
-2.  **Node.js 18+**
-3.  **Google Colab Account** (For the AI Brain)
+- Python 3.10+
+- Node.js 18+
+- Docker (Optional)
 
-### Quick Start
-1.  **Start the Brain**:
-    - Open the [Cirser Brain Notebook](ai_service/colab_node.py) in Google Colab.
-    - Run it and copy the public Ngrok URL (e.g., `http://xyz.ngrok-free.app`).
+### 1. Backend Setup
+```bash
+cd backend
+pip install -r requirements.txt
+# Set Environment Variables (see .env.example)
+# DATABASE_URL=sqlite:///./sql_app.db
+# HF_API_KEY=your_huggingface_key
+uvicorn app.main:app --reload
+```
 
-2.  **Launch the System**:
-    ```bash
-    # From the project root
-    export AI_SERVICE_URL="http://your-ngrok-url..."
-    ./start_lite.sh
-    ```
+### 2. Frontend Setup
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-3.  **Access**:
-    - Frontend: `http://localhost:5173`
-    - Backend API: `http://localhost:8000/docs`
+### 3. Running with Docker
+```bash
+docker-compose up --build
+```
 
-The script will automatically set up the virtual environment, seed the rule database, and start the servers.
+---
+
+## 📦 Deployment Guide
+
+### Backend (Render)
+1.  Connect repository to **Render**.
+2.  Select **Blueprint** or **Web Service (Docker)**.
+3.  Set Environment Variables:
+    - `HF_API_KEY`: Your Hugging Face Token.
+    - `PORT`: `8000`.
+
+### Frontend (Vercel)
+1.  Connect repository to **Vercel**.
+2.  Set Environment Variable:
+    - `VITE_API_URL`: The URL of your rendered backend (e.g., `https://cirser.onrender.com/api/v1`).
+3.  Deploy.
+
+---
+
+## 🔒 Security Compliance
+- **No Chat History Memory**: Every request is reasoned about independently.
+- **Rule-Grounding**: Every output cites a vetted source.
+- **Input Sanitization**: All inputs are validated via Pydantic schemas.
