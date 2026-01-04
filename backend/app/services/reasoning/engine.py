@@ -80,13 +80,26 @@ class ReasoningEngine:
                          ai_content = ai_content.split("```")[1].split("```")[0].strip()
 
                     # Find first { and last }
-                    start = ai_content.find("{")
-                    end = ai_content.rfind("}") + 1
-                    json_str = ai_content[start:end]
-                    plan = json.loads(json_str)
+                    if start != -1 and end != 0:
+                        json_str = ai_content[start:end]
+                        plan = json.loads(json_str)
+                    else:
+                        raise ValueError("No JSON object found in response")
                 except Exception as e:
-                   print(f"FAILED TO PARSE AI RESPONSE: {ai_content}") 
-                   return {"status": "error", "message": f"Failed to parse AI reasoning plan: {str(e)}", "raw": ai_content}
+                   print(f"WARNING: ID {str(e)} - Fallback to plain text.")
+                   # Fallback: Treat the entire response as an explanation
+                   plan = {
+                       "thought": "AI response was not in JSON format. Displaying raw output.",
+                       "selected_rule_id": "N/A",
+                       "action": "EXPLAIN",
+                       "equation": "",
+                       "variable": ""
+                   }
+                   # We append the original content content to the plan to be used by the frontend
+                   # But wait, the frontend expects 'result' or 'thought' from the plan.
+                   # Let's just pass the content as the 'thought' or add a new field.
+                   # Actually, let's just make the plan's 'thought' the content.
+                   plan["thought"] = ai_content
                 
                 # 4. Execute Plan
                 if plan.get("action") == "SOLVE_SYMBOLIC":
