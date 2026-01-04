@@ -18,7 +18,7 @@ export default function LandingPage() {
             {/* Navigation */}
             <nav className="relative z-10 flex items-center justify-between px-6 py-6 md:px-12 max-w-7xl mx-auto">
                 <div className="flex items-center gap-2">
-                    <Zap className="text-cyan-400 fill-cyan-400" size={24} />
+                    <img src="/logo.png" alt="Cirser Logo" className="w-8 h-8 object-contain" />
                     <span className="text-xl font-bold tracking-tight">CIRSER</span>
                 </div>
                 <div className="flex items-center gap-6">

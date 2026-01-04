@@ -61,10 +61,12 @@ function SimulationStack() {
 
       {/* Title Overlay */}
       <div className="absolute top-6 left-6 pointer-events-none">
-        <h1 className="text-4xl font-mono font-bold text-white tracking-tighter flex items-center gap-3">
-          <Zap className="text-cyan-400 fill-cyan-400" />
-          CIRSER
-        </h1>
+        <div className="flex items-center gap-3">
+          <img src="/logo.png" alt="Cirser" className="w-10 h-10 object-contain" />
+          <h1 className="text-4xl font-mono font-bold text-white tracking-tighter">
+            CIRSER
+          </h1>
+        </div>
         <p className="text-cyan-200/50 text-sm font-mono mt-1 ml-1">AI-POWERED REASONING ENGINE</p>
       </div>
     </div>

@@ -44,7 +44,7 @@ export default function SignupPage() {
 
             <div className="glass-panel w-full max-w-md p-8 rounded-2xl border border-white/5 relative z-10">
                 <div className="flex flex-col items-center mb-8">
-                    <Zap className="text-violet-400 fill-violet-400 mb-4" size={32} />
+                    <img src="/logo.png" alt="Cirser" className="w-16 h-16 object-contain mb-4" />
                     <h1 className="text-2xl font-bold">Initialize Access</h1>
                     <p className="text-slate-400 text-sm">Create your Cirser identity</p>
                 </div>
