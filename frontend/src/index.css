@@ -32,7 +32,6 @@ body {
   background-color: var(--color-bg);
   color: #e2e8f0;
   font-family: var(--font-sans);
-  overflow: hidden;
   /* App-like feel */
   -webkit-font-smoothing: antialiased;
 }
