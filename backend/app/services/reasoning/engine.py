@@ -69,13 +69,20 @@ class ReasoningEngine:
                 # Parse JSON from AI (Primitive extraction)
                 # In prod, use a robust parser or Guidance/Outlines
                 try:
+                    # Strip Markdown code blocks if present
+                    if "```json" in ai_content:
+                        ai_content = ai_content.split("```json")[1].split("```")[0].strip()
+                    elif "```" in ai_content:
+                         ai_content = ai_content.split("```")[1].split("```")[0].strip()
+
                     # Find first { and last }
                     start = ai_content.find("{")
                     end = ai_content.rfind("}") + 1
                     json_str = ai_content[start:end]
                     plan = json.loads(json_str)
-                except:
-                   return {"status": "error", "message": "Failed to parse AI reasoning plan.", "raw": ai_content}
+                except Exception as e:
+                   print(f"FAILED TO PARSE AI RESPONSE: {ai_content}") 
+                   return {"status": "error", "message": f"Failed to parse AI reasoning plan: {str(e)}", "raw": ai_content}
                 
                 # 4. Execute Plan
                 if plan.get("action") == "SOLVE_SYMBOLIC":
