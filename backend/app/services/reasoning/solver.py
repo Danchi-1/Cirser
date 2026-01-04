@@ -36,6 +36,22 @@ class SafeSolver:
         except Exception as e:
             return f"Error: {str(e)}"
 
+    def parse_variable_assignments(self, variable_str: str) -> dict:
+        """
+        Parses a string like "x=5, y=10" into a dictionary {'x': 5.0, 'y': 10.0}
+        """
+        params = {}
+        try:
+            # Split by comma
+            parts = [p.strip() for p in variable_str.split(",")]
+            for p in parts:
+                if "=" in p:
+                    key, val = p.split("=")
+                    params[key.strip()] = float(val.strip())
+        except:
+             pass # Fail silently, return what we have
+        return params
+
     def evaluate_numeric(self, expression_str: str, params: dict[str, float]) -> float:
         """
         Evaluates a symbolic expression with numeric parameters.

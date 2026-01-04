@@ -8,6 +8,10 @@ import {
   Cpu, Zap, X, ChevronRight, Play, RefreshCw
 } from 'lucide-react'
 import axios from 'axios'
+import ReactMarkdown from 'react-markdown'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
+import 'katex/dist/katex.min.css'
 
 // --- 1. Simulation Stack (The 3D World) ---
 function SimulationStack() {
@@ -185,7 +189,13 @@ function ChatInterface() {
               ? 'bg-cyan-600/20 border border-cyan-500/30 text-cyan-50 rounded-br-none'
               : 'bg-slate-800/50 border border-slate-700 text-slate-200 rounded-bl-none'
               }`}>
-              {m.content}
+              <ReactMarkdown
+                remarkPlugins={[remarkMath]}
+                rehypePlugins={[rehypeKatex]}
+                className="prose prose-invert prose-sm max-w-none"
+              >
+                {m.content}
+              </ReactMarkdown>
             </div>
           </motion.div>
         ))}

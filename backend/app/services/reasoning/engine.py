@@ -35,14 +35,19 @@ class ReasoningEngine:
         Available Rules:
         {candidate_context}
         
-        If a rule applies, output a JSON plan:
-        {{
-            "thought": "Analysis of why rule applies...",
+        if a rule applies, output a JSON plan:
+        {
+            "thought": "Brief analysis...",
             "selected_rule_id": "RuleID",
             "action": "SOLVE_SYMBOLIC" | "EXPLAIN" | "REFUSE",
-            "equation": "v_in - i*R", (if solving)
-            "variable": "v_in" (if solving)
-        }}
+            "equation": "v_in - i*R", 
+            "variable": "v_in" (Target variable OR "EVAL" if purely numeric evaluation)
+        }
+        
+        IMPORTANT: 
+        - If the user provides numbers (e.g., R=100), SUBSTITUTE them yourself before outputting the equation.
+        - Example: if R=100 and i=0.04, return equation "2.5 - 0.04*100" and variable "EVAL".
+        - ALWAYS choose "SOLVE_SYMBOLIC" if the user wants a calculation.
         """
 
         messages = [
@@ -58,7 +63,7 @@ class ReasoningEngine:
                     self.ai_url, 
                     json={
                         "messages": messages, 
-                        "tools": None # We are using JSON mode via prompt for now
+                        "tools": None 
                     },
                     headers=headers
                 )
@@ -66,8 +71,7 @@ class ReasoningEngine:
                 result = response.json()
                 ai_content = result["choices"][0]["message"]["content"]
                 
-                # Parse JSON from AI (Primitive extraction)
-                # In prod, use a robust parser or Guidance/Outlines
+                # Parse JSON logic (Already patched)
                 try:
                     # Strip Markdown code blocks if present
                     if "```json" in ai_content:
@@ -86,7 +90,13 @@ class ReasoningEngine:
                 
                 # 4. Execute Plan
                 if plan.get("action") == "SOLVE_SYMBOLIC":
-                    val = self.solver.solve_symbolic(plan["equation"], plan["variable"])
+                    if plan.get("variable") == "EVAL":
+                         # Pure numeric evaluation
+                         val = self.solver.evaluate_numeric(plan["equation"], {})
+                    else:
+                         # Symbolic solving
+                         val = self.solver.solve_symbolic(plan["equation"], plan["variable"])
+                    
                     return {
                         "status": "success",
                         "plan": plan,
