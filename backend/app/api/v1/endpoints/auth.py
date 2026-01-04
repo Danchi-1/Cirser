@@ -57,9 +57,16 @@ def create_user(
             detail="The user with this username already exists in the system.",
         )
     
+    print(f"DEBUG: Signup attempt for {user_in.email}. Password length: {len(user_in.password)}")
+    try:
+        hashed_pw = security.get_password_hash(user_in.password)
+    except ValueError as e:
+        print(f"ERROR: Password hashing failed. Length: {len(user_in.password)}")
+        raise HTTPException(status_code=400, detail=f"Password processing error: {str(e)}")
+
     user = User(
         email=user_in.email,
-        hashed_password=security.get_password_hash(user_in.password),
+        hashed_password=hashed_pw,
         full_name=user_in.full_name,
     )
     db.add(user)
