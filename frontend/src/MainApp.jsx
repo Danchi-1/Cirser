@@ -64,10 +64,12 @@ function SimulationStack() {
       </Canvas>
 
       {/* Title Overlay */}
-      <div className="absolute top-6 left-6 pointer-events-none">
+      <div className="absolute top-6 left-6 pointer-events-none z-20">
         <div className="flex items-center gap-3">
-          <img src="/logo.png" alt="Cirser" className="w-10 h-10 object-contain" />
-          <h1 className="text-4xl font-mono font-bold text-white tracking-tighter">
+          <div className="w-10 h-10 rounded-full overflow-hidden border border-cyan-500/20 shadow-[0_0_10px_rgba(6,182,212,0.15)] bg-black/20 backdrop-blur-sm">
+            <img src="/logo.png" alt="Cirser" className="w-full h-full object-cover" />
+          </div>
+          <h1 className="text-3xl md:text-4xl font-mono font-bold text-white tracking-tighter drop-shadow-lg">
             CIRSER
           </h1>
         </div>

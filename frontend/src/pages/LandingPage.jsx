@@ -16,16 +16,25 @@ export default function LandingPage() {
             <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-violet-500/10 rounded-full blur-[120px] pointer-events-none" />
 
             {/* Navigation */}
-            <nav className="relative z-10 flex flex-col md:flex-row items-center justify-between px-6 py-6 md:px-12 max-w-7xl mx-auto gap-4 md:gap-0">
-                <div className="flex items-center gap-2">
-                    <img src="/logo.png" alt="Cirser Logo" className="w-8 h-8 object-contain" />
-                    <span className="text-xl font-bold tracking-tight">CIRSER</span>
+            <nav className="relative z-10 flex items-center justify-between px-4 py-4 md:px-12 md:py-6 max-w-7xl mx-auto">
+                {/* Branding */}
+                <div className="flex items-center gap-2 md:gap-3">
+                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden border border-cyan-500/20 shadow-[0_0_10px_rgba(6,182,212,0.15)] shrink-0">
+                        <img src="/logo.png" alt="Cirser Logo" className="w-full h-full object-cover" />
+                    </div>
+                    <span className="text-lg md:text-xl font-bold tracking-tight text-white shrink-0">CIRSER</span>
                 </div>
-                <div className="flex flex-wrap justify-center items-center gap-6">
-                    <Link to="/about" className="text-sm text-slate-400 hover:text-white transition-colors">How it Works</Link>
-                    <a href="https://github.com/Danchi-1/Cirser" target="_blank" className="text-sm text-slate-400 hover:text-white transition-colors">GitHub</a>
+
+                {/* Actions */}
+                <div className="flex items-center gap-4 md:gap-6">
+                    {/* Hide secondary links on mobile to prevent clutter */}
+                    <div className="hidden md:flex items-center gap-6">
+                        <Link to="/about" className="text-sm text-slate-400 hover:text-white transition-colors">How it Works</Link>
+                        <a href="https://github.com/Danchi-1/Cirser" target="_blank" className="text-sm text-slate-400 hover:text-white transition-colors">GitHub</a>
+                    </div>
+
                     <Link to={token ? "/workspace" : "/login"}>
-                        <button className="glass-button px-4 py-2 rounded-lg text-sm font-medium">
+                        <button className="glass-button px-4 py-2 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap">
                             {token ? "Launch App" : "Login"}
                         </button>
                     </Link>
