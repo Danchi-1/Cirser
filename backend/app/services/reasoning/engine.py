@@ -12,7 +12,7 @@ class ReasoningEngine:
         self.solver = SafeSolver()
         self.ai_url = f"{settings.AI_SERVICE_URL.rstrip('/')}/v1/chat/completions"
 
-    async def process_user_intent(self, user_query: str) -> dict:
+    async def process_user_intent(self, user_query: str, token: str) -> dict:
         """
         1. Access RAG for context.
         2. Format Prompt for AI.
@@ -53,12 +53,14 @@ class ReasoningEngine:
         # 3. Call AI
         try:
             async with httpx.AsyncClient(timeout=60.0) as client:
+                headers = {"Authorization": f"Bearer {token}"}
                 response = await client.post(
                     self.ai_url, 
                     json={
                         "messages": messages, 
                         "tools": None # We are using JSON mode via prompt for now
-                    }
+                    },
+                    headers=headers
                 )
                 response.raise_for_status()
                 result = response.json()
