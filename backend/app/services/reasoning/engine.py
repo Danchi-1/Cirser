@@ -48,6 +48,7 @@ class ReasoningEngine:
         - If the user provides numbers (e.g., R=100), SUBSTITUTE them yourself before outputting the equation.
         - Example: if R=100 and i=0.04, return equation "2.5 - 0.04*100" and variable "EVAL".
         - ALWAYS choose "SOLVE_SYMBOLIC" if the user wants a calculation.
+        - EQUATION SYNTAX: Must be valid Python. Variable names CANNOT contain spaces. Use underscores (e.g., "Z_a", not "Z a").
         """
 
         messages = [

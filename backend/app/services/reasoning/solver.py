@@ -22,8 +22,10 @@ class SafeSolver:
         Equation format: "x + y - 5" (meaning = 0)
         """
         try:
+            # Sanitize equation: Remove spaces to handle cases like "Z a" -> "Za"
+            sanitized_eq = equation_str.replace(" ", "")
             expr = parse_expr(
-                equation_str, 
+                sanitized_eq, 
                 transformations=self.transformations,
                 global_dict={}, # No globals
                 local_dict=self.allowed_locals
