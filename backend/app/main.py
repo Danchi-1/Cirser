@@ -20,10 +20,7 @@ def startup_event():
 
 # CORS Policy
 origins = [
-    "http://localhost",
-    "http://localhost:5173", # Vite Dev
-    "https://cirser.vercel.app", # Production Frontend
-    "https://cirser.vercel.app/",
+    "*", # Allow all origins for now to fix the CORS issue immediately
 ]
 
 app.add_middleware(
