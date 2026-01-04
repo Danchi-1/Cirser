@@ -1,23 +1,11 @@
-from pydantic import BaseModel, Field
-from typing import Optional, List
-from uuid import UUID, uuid4
+from typing import Any
+from sqlalchemy import Boolean, Column, Integer, String
+from app.db.base_class import Base
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-class TokenData(BaseModel):
-    username: Optional[str] = None
-
-class UserBase(BaseModel):
-    username: str
-
-class UserCreate(UserBase):
-    password: str
-
-class User(UserBase):
-    id: UUID = Field(default_factory=uuid4)
-    disabled: Optional[bool] = None
-    
-    class Config:
-        from_attributes = True
+class User(Base):
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    full_name = Column(String, index=True)
+    is_active = Column(Boolean(), default=True)
+    is_superuser = Column(Boolean(), default=False)
