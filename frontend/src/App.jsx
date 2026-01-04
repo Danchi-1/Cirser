@@ -129,7 +129,7 @@ function ChatInterface() {
 
     try {
       // Use deployed URL or local fallback
-      const API_URL = import.meta.env.VITE_API_URL || 'https://cirser-backend.up.railway.app/api/v1'; // UPDATE THIS WITH REAL URL LATER
+      const API_URL = import.meta.env.VITE_API_URL || 'https://cirser.onrender.com/api/v1';
 
       const res = await axios.post(`${API_URL}/chat/message`, { message: userMsg.content });
 
@@ -176,8 +176,8 @@ function ChatInterface() {
             className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div className={`max-w-[85%] p-3 rounded-2xl text-sm leading-relaxed ${m.role === 'user'
-                ? 'bg-cyan-600/20 border border-cyan-500/30 text-cyan-50 rounded-br-none'
-                : 'bg-slate-800/50 border border-slate-700 text-slate-200 rounded-bl-none'
+              ? 'bg-cyan-600/20 border border-cyan-500/30 text-cyan-50 rounded-br-none'
+              : 'bg-slate-800/50 border border-slate-700 text-slate-200 rounded-bl-none'
               }`}>
               {m.content}
             </div>

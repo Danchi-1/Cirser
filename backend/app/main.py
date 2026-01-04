@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api.v1.endpoints import auth, chat, simulation
+from app.api.v1.endpoints import auth, chat, simulation, ai_proxy
 
 app = FastAPI(title=settings.PROJECT_NAME)
 
@@ -9,6 +9,8 @@ app = FastAPI(title=settings.PROJECT_NAME)
 origins = [
     "http://localhost",
     "http://localhost:5173", # Vite Dev
+    "https://cirser.vercel.app", # Production Frontend
+    "https://cirser.vercel.app/",
 ]
 
 app.add_middleware(
@@ -22,6 +24,7 @@ app.add_middleware(
 # Include Routers (We will create these files next)
 app.include_router(chat.router, prefix=f"{settings.API_V1_STR}/chat", tags=["chat"])
 app.include_router(simulation.router, prefix=f"{settings.API_V1_STR}/simulation", tags=["simulation"])
+app.include_router(ai_proxy.router, prefix="/v1", tags=["ai-proxy"]) # Mimics the external service URL structure
 
 @app.get("/")
 def read_root():

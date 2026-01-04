@@ -5,6 +5,7 @@ alembic
 psycopg2-binary
 pydantic
 pydantic-settings
+huggingface-hub
 python-jose[cryptography]
 passlib[bcrypt]
 sympy
