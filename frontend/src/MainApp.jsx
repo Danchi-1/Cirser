@@ -150,11 +150,19 @@ function ChatInterface() {
 
         let displayContent = plan.thought;
 
+        // Helper to format values that might be objects
+        const formatValue = (val) => {
+          if (typeof val === 'object' && val !== null) {
+            return '\n' + Object.entries(val).map(([k, v]) => `  - **${k}:** ${v}`).join('\n');
+          }
+          return val;
+        };
+
         // Append Engineering Audit details if present
         if (plan.parameter_definition || plan.applicability_check) {
           displayContent += `\n\n---\n\n### 🛡️ Engineering Audit\n\n`;
-          if (plan.parameter_definition) displayContent += `> **Definition:** ${plan.parameter_definition}\n\n`;
-          if (plan.physical_interpretation) displayContent += `> **Physics:** ${plan.physical_interpretation}\n\n`;
+          if (plan.parameter_definition) displayContent += `> **Definition:** ${formatValue(plan.parameter_definition)}\n\n`;
+          if (plan.physical_interpretation) displayContent += `> **Physics:** ${formatValue(plan.physical_interpretation)}\n\n`;
 
           if (plan.applicability_check) {
             displayContent += `**Rule Check:**\n`;
@@ -167,8 +175,12 @@ function ChatInterface() {
         if (res.data.reasoning_steps && res.data.reasoning_steps.length > 0) {
           displayContent += `\n\n---\n\n### 🔢 Calculation Steps\n\n`;
           res.data.reasoning_steps.forEach(step => {
-            displayContent += `**Step ${step.step}:** ${step.thought}\n`;
-            displayContent += `> $${step.equation} = ${step.result}$\n\n`;
+            displayContent += `**Step ${step.step} (${step.phase}):** ${step.thought}\n`;
+            if (step.equation && step.result) {
+              displayContent += `> $${step.equation} = ${step.result}$\n\n`;
+            } else {
+              displayContent += `\n`;
+            }
           });
         }
 
