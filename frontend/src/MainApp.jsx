@@ -33,7 +33,7 @@ function SimulationStack() {
 
         <OrbitControls makeDefault minPolarAngle={0} maxPolarAngle={Math.PI / 2.1} />
 
-        {/* Placeholder Nodes with Glow */}
+        {/* Dynamic Simulation Content */}
         <group>
           {simState.nodes && simState.nodes.map((node, i) => (
             <mesh key={i} position={node.position || [i * 3 - 3, 0.5, 0]}>
@@ -41,23 +41,42 @@ function SimulationStack() {
               <meshStandardMaterial
                 color="#0ea5e9"
                 emissive="#0ea5e9"
-                emissiveIntensity={0.5}
-                roughness={0.2}
-                metalness={0.8}
+                emissiveIntensity={0.8}
+                wireframe={true} // Tech look
               />
+              {/* Inner Core */}
+              <mesh scale={[0.8, 0.8, 0.8]}>
+                <boxGeometry />
+                <meshStandardMaterial color="#000" />
+              </mesh>
             </mesh>
           ))}
 
-          {/* Central "Chip" Representation if empty */}
+          {/* New "System Idle" State - Rotating Tech Ring */}
           {!simState.nodes?.length && (
-            <mesh position={[0, 0.5, 0]}>
-              <boxGeometry args={[2, 0.2, 2]} />
-              <meshStandardMaterial color="#1e293b" metalness={0.9} roughness={0.1} />
-            </mesh>
+            <group position={[0, 1, 0]}>
+              {/* Outer Ring */}
+              <mesh rotation={[Math.PI / 2, 0, 0]}>
+                <torusGeometry args={[2, 0.02, 16, 100]} />
+                <meshBasicMaterial color="#0ea5e9" transparent opacity={0.3} />
+              </mesh>
+              {/* Spinning Inner Cube */}
+              <mesh>
+                <boxGeometry args={[0.5, 0.5, 0.5]} />
+                <meshStandardMaterial color="#0ea5e9" wireframe />
+              </mesh>
+              {/* Floating Label */}
+              <Html position={[0, -1, 0]} center>
+                <div className="glass-panel px-3 py-1 text-xs text-cyan-400 font-mono flex items-center gap-2">
+                  <Activity size={10} className="animate-pulse" />
+                  SYSTEM READY
+                </div>
+              </Html>
+            </group>
           )}
         </group>
 
-        <ContactShadows opacity={0.5} scale={20} blur={2} far={4.5} />
+        <ContactShadows opacity={0.4} scale={20} blur={2.5} far={4.5} color="#0ea5e9" />
       </Canvas>
 
       {/* Title Overlay */}
@@ -168,16 +187,16 @@ const ThinkingProcess = ({ audit, steps }) => {
   };
 
   return (
-    <div className="mt-3 mb-2 rounded-lg overflow-hidden border border-white/10 bg-black/20">
+    <div className="mb-4 rounded-xl overflow-hidden border border-cyan-500/20 bg-cyan-950/10">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between p-2 text-xs font-mono text-slate-400 hover:bg-white/5 transition-colors"
+        className="w-full flex items-center justify-between p-3 text-xs font-mono text-cyan-400 hover:bg-cyan-500/5 transition-colors"
       >
         <div className="flex items-center gap-2">
-          <div className={`w-1.5 h-1.5 rounded-full ${audit ? 'bg-green-500' : 'bg-amber-500'}`} />
+          <Activity size={14} />
           <span>ENGINEERING PROCESS {audit?.action ? `[${audit.action}]` : ''}</span>
         </div>
-        {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        <ChevronRight size={14} className={`transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
       </button>
 
       <AnimatePresence>
@@ -188,7 +207,7 @@ const ThinkingProcess = ({ audit, steps }) => {
             exit={{ height: 0 }}
             className="overflow-hidden"
           >
-            <div className="p-3 border-t border-white/10 text-xs space-y-3 bg-black/40">
+            <div className="p-3 border-t border-cyan-500/20 text-xs space-y-3 bg-black/40">
               {/* Re-Simulate Button (Only if we have a plan) */}
               {audit && audit.variable && (
                 <button
@@ -427,19 +446,32 @@ function ChatInterface() {
       </div>
 
       {/* Input Area */}
-      <div className="p-3 bg-black/20 border-t border-white/5 flex gap-2">
-        <input
-          className="glass-input flex-1 rounded-xl px-4 py-2.5 text-sm font-sans placeholder-slate-500"
+      <div className="p-3 bg-black/20 border-t border-white/5 flex gap-2 items-end">
+        <textarea
+          ref={(el) => {
+            // Auto-resize logic
+            if (el) {
+              el.style.height = 'auto';
+              el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+            }
+          }}
+          className="glass-input flex-1 rounded-xl px-4 py-3 text-sm font-sans placeholder-slate-500 resize-none overflow-y-auto min-h-[44px] max-h-[120px]"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
           placeholder="Describe a circuit problem..."
           disabled={isLoading}
+          rows={1}
         />
         <button
           onClick={handleSend}
           disabled={isLoading}
-          className="bg-cyan-500 hover:bg-cyan-400 text-black p-2.5 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-cyan-500 hover:bg-cyan-400 text-black p-2.5 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed h-[44px] w-[44px] flex items-center justify-center shrink-0"
         >
           {isLoading ? <RefreshCw size={18} className="animate-spin" /> : <Send size={18} />}
         </button>
@@ -566,12 +598,16 @@ export default function MainApp() {
       <div className={`absolute inset-0 z-10 pointer-events-none p-6 flex flex-col justify-end transition-opacity duration-500 ${mobileView === 'sim' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
         {/* Top Layer is managed absolute by RuleStack */}
         <UserMenu />
-        <RuleStack />
+
+        {/* Hide RuleStack on Mobile to prevent overlap */}
+        <div className="hidden md:block">
+          <RuleStack />
+        </div>
 
         {/* Bottom Layer: Main Interaction Zone */}
-        {/* Mobile: Full Height. Desktop: 40vh */}
+        {/* Mobile: 80% Height to clear Header. Desktop: 40vh */}
         <div className={`flex flex-col md:flex-row gap-4 md:gap-6 items-stretch md:items-end pointer-events-auto pb-6 md:pb-0 transition-all duration-300
-            ${mobileView === 'chat' ? 'h-[90vh] md:h-[40vh]' : 'h-0 md:h-[40vh] overflow-hidden'}
+            ${mobileView === 'chat' ? 'h-[80vh] md:h-[40vh]' : 'h-0 md:h-[40vh] overflow-hidden'}
         `}>
           {/* Chat takes majority */}
           <div className="flex-1 md:flex-[2] h-full min-h-0">
