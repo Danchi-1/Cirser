@@ -18,3 +18,4 @@ chromadb
 httpx
 python-multipart
 redis
+duckduckgo-search>=5.0.0

@@ -41,7 +41,7 @@ export default function SignupPage() {
         <div className="min-h-screen bg-[#030712] text-white font-sans flex items-center justify-center p-6 relative overflow-hidden">
             {/* Background */}
             <div className="absolute inset-0 bg-grid-pattern opacity-10 pointer-events-none" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-violet-500/10 rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
 
             <div className="glass-panel w-full max-w-md p-8 rounded-2xl border border-white/5 relative z-10">
                 <div className="flex flex-col items-center mb-8">
@@ -105,7 +105,7 @@ export default function SignupPage() {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full bg-violet-500 hover:bg-violet-400 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 mt-2"
+                        className="w-full bg-cyan-500 hover:bg-cyan-400 text-black font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 mt-2"
                     >
                         {isLoading ? 'Processing...' : 'Create Account'}
                         {!isLoading && <ArrowRight size={18} />}
@@ -114,7 +114,7 @@ export default function SignupPage() {
 
                 <div className="mt-6 text-center text-sm text-slate-500">
                     Already have an account?{' '}
-                    <Link to="/login" className="text-violet-400 hover:text-violet-300 transition-colors">
+                    <Link to="/login" className="text-cyan-400 hover:text-cyan-300 transition-colors">
                         Login here
                     </Link>
                 </div>

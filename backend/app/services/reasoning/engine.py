@@ -111,7 +111,19 @@ class ReasoningEngine:
             })
 
             # --- PHASE 4: VERIFICATION & EXPLANATION ---
+            # Check for Deep Verification Trigger
+            verification_note = ""
+            if "verify" in user_query.lower() or "check" in user_query.lower():
+                verify_result = await self._phase_5_deep_verify(user_query, context_data, symbolic_plan, token)
+                reasoning_trace.append({
+                    "step": 4, "phase": "DEEP_VERIFICATION",
+                    "thought": f"Cross-referenced with external knowledge base.",
+                    "result": verify_result['status']
+                })
+                verification_note = f"\n\n**🛡️ Deep Verification ({verify_result['status']}):**\n{verify_result['analysis']}"
+
             final_explanation = await self._phase_4_explanation(user_query, context_data, symbolic_plan, result_val, token)
+            final_explanation += verification_note
             
             final_plan = {
                 "action": "SOLVE_SYMBOLIC", 
@@ -233,5 +245,41 @@ class ReasoningEngine:
         Output: A concise, professional engineering explanation (Markdown).
         """
         return await self._call_ai([{"role": "system", "content": prompt}], token)
+
+    async def _phase_5_deep_verify(self, query: str, context: dict, plan: dict, token: str) -> dict:
+        # 1. Graceful Import of Tool
+        try:
+            from app.services.tools.search import search_physics_concepts
+        except ImportError:
+            return {"status": "SKIPPED", "analysis": "Search tool not installed (dev mode)."}
+
+        # 2. Perform Search contextually
+        search_query = f"{context['parameter_definition']} formula derivation {context['selected_rule_id']}"
+        search_results = search_physics_concepts(search_query, max_results=3)
+
+        # 3. AI Cross-Reference
+        prompt = f"""
+        PHASE 5: DEEP VERIFICATION
+        Goal: Cross-reference internal derivation with external search results.
+
+        Derived Equation: {plan['equation']}
+        Used Rule: {context['selected_rule_id']}
+        
+        External Search Results:
+        {search_results}
+
+        Task: Compare the Derived Equation with the External Search Results.
+        - If they match/align, return status "VERIFIED".
+        - If they contradict, return status "FLAGGED".
+        - Provide a concise analysis.
+
+        OUTPUT JSON:
+        {{
+            "status": "VERIFIED" | "FLAGGED",
+            "analysis": "Brief comparison analysis..."
+        }}
+        """
+        resp = await self._call_ai([{"role": "system", "content": prompt}], token)
+        return self._extract_json(resp)
 
 engine = ReasoningEngine()

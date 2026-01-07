@@ -37,7 +37,10 @@ const useStore = create((set) => ({
 
     // Chat State
     messages: [{ role: 'assistant', content: 'Connected to Cirser Core. State your problem.' }],
+    sessionId: null,
     addMessage: (msg) => set((state) => ({ messages: [...state.messages, msg] })),
+    setMessages: (msgs) => set({ messages: msgs }),
+    setSessionId: (id) => set({ sessionId: id }),
 
     // Simulation State (The "Truth" from Backend)
     simState: {

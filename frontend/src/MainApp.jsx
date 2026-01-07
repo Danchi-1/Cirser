@@ -3,10 +3,7 @@ import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Grid, Environment, ContactShadows } from '@react-three/drei'
 import { motion, AnimatePresence } from 'framer-motion'
 import useStore from './store/useStore'
-import {
-  Send, Activity, BookOpen, Settings, AlertCircle,
-  Cpu, Zap, X, ChevronRight, Play, RefreshCw, User, LogOut
-} from 'lucide-react'
+import { Send, Cpu, Activity, Database, AlertCircle, RefreshCw, ChevronDown, ChevronUp, CheckCircle2, AlertTriangle, Menu, X, Box, MessageSquare, RotateCw } from 'lucide-react';
 import axios from 'axios'
 import ReactMarkdown from 'react-markdown'
 import remarkMath from 'remark-math'
@@ -115,8 +112,10 @@ function RuleStack() {
 }
 
 // --- 2.5 Thinking Process (Collapsible) ---
-function ThinkingProcess({ audit, steps }) {
-  const [isOpen, setIsOpen] = useState(false);
+// Re-Simulate Logic
+const ThinkingProcess = ({ audit, steps }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const { updateSimState } = useStore();
 
   // Helper to format values
   const formatValue = (val) => {
@@ -128,66 +127,134 @@ function ThinkingProcess({ audit, steps }) {
 
   if (!audit && (!steps || steps.length === 0)) return null;
 
+  const handleReSimulate = () => {
+    // Logic to restore simulation from the saved plan
+    // The plan is in 'audit' (which is the 'plan' from backend)
+
+    // 1. Extract variables
+    // This logic mimics the original handling in the main chat response
+    let nodes = [];
+    const variables = audit.variable || "";
+
+    if (variables && variables.startsWith("EVAL")) {
+      // Parse EVAL string: "EVAL, Z_c=0.833, Z_3=10"
+      const parts = variables.replace("EVAL,", "").split(",");
+      nodes = parts.map((p, i) => {
+        const [key, val] = p.split("=").map(s => s.trim());
+        if (!key) return null;
+        return {
+          id: `node-${i}`,
+          label: key,
+          value: val,
+          type: 'resistor', // generic fallback
+          position: [Math.cos(i) * 2, Math.sin(i) * 2, 0] // circular layout
+        };
+      }).filter(n => n);
+    } else if (variables) {
+      // Legacy or symbolic list handling
+      const parts = variables.split(",");
+      nodes = parts.map((key, i) => ({
+        id: `node-${i}`,
+        label: key.trim(),
+        value: "?",
+        type: 'impedance',
+        position: [Math.cos(i) * 2, Math.sin(i) * 2, 0]
+      }));
+    }
+
+    if (nodes.length > 0) {
+      updateSimState({ nodes, branches: [], params: { equation: audit.equation } });
+    }
+  };
+
   return (
-    <div className="mb-4 rounded-xl overflow-hidden border border-cyan-500/20 bg-cyan-950/10">
+    <div className="mt-3 mb-2 rounded-lg overflow-hidden border border-white/10 bg-black/20">
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-3 text-xs font-mono text-cyan-400 hover:bg-cyan-500/5 transition-colors"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex items-center justify-between p-2 text-xs font-mono text-slate-400 hover:bg-white/5 transition-colors"
       >
         <div className="flex items-center gap-2">
-          <Activity size={14} />
-          <span>ENGINEERING PROCESS</span>
+          <div className={`w-1.5 h-1.5 rounded-full ${audit ? 'bg-green-500' : 'bg-amber-500'}`} />
+          <span>ENGINEERING PROCESS {audit?.action ? `[${audit.action}]` : ''}</span>
         </div>
-        <ChevronRight size={14} className={`transition-transformDuration-200 ${isOpen ? 'rotate-90' : ''}`} />
+        {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
       </button>
 
       <AnimatePresence>
-        {isOpen && (
+        {isExpanded && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
+            initial={{ height: 0 }}
+            animate={{ height: "auto" }}
+            exit={{ height: 0 }}
             className="overflow-hidden"
           >
-            <div className="p-4 pt-0 text-sm space-y-4 border-t border-cyan-500/20">
-              {/* Audit Phase */}
-              {audit && (audit.parameter_definition || audit.applicability_check) && (
-                <div className="space-y-2">
-                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Phase 1: Definition & Rules</h4>
-                  <div className="bg-black/20 p-3 rounded-lg border border-white/5 space-y-2">
-                    {audit.parameter_definition && (
-                      <div><span className="text-cyan-200 font-mono text-xs">DEF:</span> <span className="text-slate-300">{formatValue(audit.parameter_definition)}</span></div>
-                    )}
-                    {audit.physical_interpretation && (
-                      <div><span className="text-cyan-200 font-mono text-xs">PHY:</span> <span className="text-slate-300">{formatValue(audit.physical_interpretation)}</span></div>
-                    )}
-                    {audit.applicability_check && (
-                      <div className="mt-2 pt-2 border-t border-white/5">
-                        <div className="flex items-center gap-2 text-xs">
-                          <span className={audit.applicability_check.conditions_met ? "text-emerald-400" : "text-red-400"}>
-                            {audit.applicability_check.conditions_met ? "✔ RULES MET" : "❌ RULES VIOLATED"}
-                          </span>
-                        </div>
-                      </div>
-                    )}
+            <div className="p-3 border-t border-white/10 text-xs space-y-3 bg-black/40">
+              {/* Re-Simulate Button (Only if we have a plan) */}
+              {audit && audit.variable && (
+                <button
+                  onClick={handleReSimulate}
+                  className="w-full py-1.5 mb-2 bg-cyan-900/30 border border-cyan-500/30 text-cyan-400 rounded hover:bg-cyan-900/50 transition-colors flex items-center justify-center gap-2 font-bold"
+                >
+                  <RotateCw size={12} />
+                  RE-SIMULATE 3D MODEL
+                </button>
+              )}
+
+              {/* AUDIT: Definition */}
+              {audit?.parameter_definition && (
+                <div>
+                  <span className="text-slate-500 block mb-1">DEFINITION</span>
+                  <div className="text-cyan-300 bg-cyan-900/20 p-2 rounded border border-cyan-500/10">
+                    {formatValue(audit.parameter_definition)}
                   </div>
                 </div>
               )}
 
-              {/* Steps Phase */}
+              {/* AUDIT: Physics */}
+              {audit?.physical_interpretation && (
+                <div>
+                  <span className="text-slate-500 block mb-1">PHYSICAL INTERPRETATION</span>
+                  <div className="text-slate-300">{audit.physical_interpretation}</div>
+                </div>
+              )}
+
+              {/* AUDIT: Rule Check */}
+              {audit?.applicability_check && (
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-slate-500">RULE CHECK</span>
+                    {audit.applicability_check.conditions_met ?
+                      <span className="text-green-400 flex items-center gap-1"><CheckCircle2 size={10} /> PASS</span> :
+                      <span className="text-red-400 flex items-center gap-1"><AlertTriangle size={10} /> FAIL</span>
+                    }
+                  </div>
+                  <div className="text-slate-400 italic border-l-2 border-slate-700 pl-2">
+                    "{audit.applicability_check.justification}"
+                  </div>
+                </div>
+              )}
+
+              {/* STEPS TRACE */}
               {steps && steps.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Phase 2-3: Derivation</h4>
+                <div className="mt-2 pt-2 border-t border-white/5">
+                  <span className="text-slate-500 block mb-2">DERIVATION STEPS</span>
                   <div className="space-y-2">
                     {steps.map((step, idx) => (
-                      <div key={idx} className="bg-black/20 p-3 rounded-lg border border-white/5">
-                        <div className="flex justify-between items-start mb-1">
-                          <span className="text-xs font-mono text-slate-500">STEP {step.step} ({step.phase})</span>
+                      <div key={idx} className="relative pl-3 border-l border-slate-800">
+                        <div className="absolute left-[-4px] top-1.5 w-2 h-2 rounded-full bg-slate-800" />
+                        <div className="flex justify-between text-[10px] text-slate-500 uppercase font-bold">
+                          <span>{step.phase}</span>
+                          {step.rule_id && <span>{step.rule_id.slice(0, 8)}</span>}
                         </div>
-                        <p className="text-slate-300 mb-2">{step.thought}</p>
-                        {step.equation && step.result && (
-                          <div className="font-mono text-xs bg-black/40 p-2 rounded text-cyan-100 overflow-x-auto">
-                            {step.equation} = {step.result}
+                        <div className="text-slate-300">{step.thought}</div>
+                        {step.equation && step.phase !== 'EXECUTION' && (
+                          <code className="block mt-1 bg-black/50 p-1 rounded text-amber-400 font-mono">
+                            {step.equation}
+                          </code>
+                        )}
+                        {step.result && (
+                          <div className="mt-1 text-green-400 font-bold">
+                            → {step.result}
                           </div>
                         )}
                       </div>
@@ -201,7 +268,7 @@ function ThinkingProcess({ audit, steps }) {
       </AnimatePresence>
     </div>
   );
-}
+};
 function ChatInterface() {
   const { messages, addMessage, setActiveRules, token } = useStore();
   const [input, setInput] = useState("");
@@ -457,6 +524,12 @@ function UserMenu() {
                 <p className="text-sm font-bold text-white truncate">{user ? (user.full_name || user.email) : 'Loading...'}</p>
               </div>
               <div className="p-1">
+                <button
+                  onClick={() => { navigate('/history'); setIsOpen(false); }}
+                  className="w-full text-left px-3 py-2 text-sm text-slate-300 hover:bg-white/5 rounded-lg flex items-center gap-2 transition-colors"
+                >
+                  <Clock size={14} /> Mission Logs
+                </button>
                 <button className="w-full text-left px-3 py-2 text-sm text-slate-300 hover:bg-white/5 rounded-lg flex items-center gap-2 transition-colors">
                   <User size={14} /> Profile
                 </button>
@@ -477,6 +550,9 @@ function UserMenu() {
 
 // --- Main Layout ---
 export default function MainApp() {
+  const [mobileView, setMobileView] = useState('chat'); // 'chat' | 'sim'
+  const simNodes = useStore(s => s.simState.nodes || []);
+
   return (
     <div className="w-screen h-screen relative bg-[#030712] text-white overflow-hidden font-sans selection:bg-cyan-500/30">
 
@@ -484,23 +560,55 @@ export default function MainApp() {
       <SimulationStack />
 
       {/* Foreground UI Layer */}
-      <div className="absolute inset-0 z-10 pointer-events-none p-6 flex flex-col justify-end">
+      <div className={`absolute inset-0 z-10 pointer-events-none p-6 flex flex-col justify-end transition-opacity duration-500 ${mobileView === 'sim' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
         {/* Top Layer is managed absolute by RuleStack */}
         <UserMenu />
         <RuleStack />
 
         {/* Bottom Layer: Main Interaction Zone */}
-        <div className="flex flex-col md:flex-row gap-4 md:gap-6 h-[75vh] md:h-[40vh] items-stretch md:items-end pointer-events-auto pb-6 md:pb-0">
+        {/* Mobile: Full Height. Desktop: 40vh */}
+        <div className={`flex flex-col md:flex-row gap-4 md:gap-6 items-stretch md:items-end pointer-events-auto pb-6 md:pb-0 transition-all duration-300
+            ${mobileView === 'chat' ? 'h-[90vh] md:h-[40vh]' : 'h-0 md:h-[40vh] overflow-hidden'}
+        `}>
           {/* Chat takes majority */}
-          <div className="flex-1 md:flex-[2] h-1/2 md:h-full min-h-0">
+          <div className="flex-1 md:flex-[2] h-full min-h-0">
             <ChatInterface />
           </div>
 
           {/* Controls takes minority */}
-          <div className="flex-none md:flex-1 h-auto md:h-3/4 min-h-0">
+          <div className="flex-none md:flex-1 h-auto md:h-3/4 min-h-0 hidden md:block">
             <ControlStack />
           </div>
         </div>
+      </div>
+
+      {/* Mobile Simulation Controls Overlay */}
+      <div className="absolute inset-0 z-20 pointer-events-none md:hidden p-6 flex flex-col justify-end">
+        {/* If in Chat Mode & Sim Exists -> Show 'View Sim' Button */}
+        {mobileView === 'chat' && simNodes.length > 0 && (
+          <div className="absolute bottom-24 right-6 pointer-events-auto">
+            <button
+              onClick={() => setMobileView('sim')}
+              className="bg-cyan-500 text-black font-bold p-4 rounded-full shadow-lg shadow-cyan-500/40 animate-bounce flex items-center gap-2"
+            >
+              <Zap size={20} fill="black" />
+              <span>View 3D</span>
+            </button>
+          </div>
+        )}
+
+        {/* If in Sim Mode -> Show 'Back' Button */}
+        {mobileView === 'sim' && (
+          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 pointer-events-auto">
+            <button
+              onClick={() => setMobileView('chat')}
+              className="glass-button px-6 py-3 rounded-full flex items-center gap-2 text-white border-2 border-cyan-500/50 hover:bg-cyan-500/10 backdrop-blur-md"
+            >
+              <ChevronRight className="rotate-180" size={20} />
+              <span>Back to Reasoning</span>
+            </button>
+          </div>
+        )}
       </div>
 
     </div>

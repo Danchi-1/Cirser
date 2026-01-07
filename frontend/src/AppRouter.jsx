@@ -4,6 +4,7 @@ import LandingPage from './pages/LandingPage'
 import AboutPage from './pages/AboutPage'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
+import HistoryPage from './pages/HistoryPage'
 import MainApp from './MainApp'
 import useStore from './store/useStore'
 import './index.css'
@@ -24,6 +25,14 @@ export default function App() {
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
+                <Route
+                    path="/history"
+                    element={
+                        <ProtectedRoute>
+                            <HistoryPage />
+                        </ProtectedRoute>
+                    }
+                />
                 <Route
                     path="/workspace"
                     element={

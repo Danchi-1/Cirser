@@ -1,12 +1,35 @@
 from pydantic import BaseModel
-from typing import Optional, List, Any
+from typing import List, Optional, Any, Dict
+from datetime import datetime
 
-class ChatRequest(BaseModel):
-    message: str
+class ChatMessageBase(BaseModel):
+    role: str
+    content: str
+    meta_audit: Optional[Dict[str, Any]] = None
 
-class ChatResponse(BaseModel):
-    status: str
-    plan: Optional[dict] = None
-    result: Optional[Any] = None
-    candidates: Optional[List[dict]] = None
-    message: Optional[str] = None
+class ChatMessageCreate(ChatMessageBase):
+    pass
+
+class ChatMessage(ChatMessageBase):
+    id: int
+    session_id: str
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class ChatSessionBase(BaseModel):
+    title: Optional[str] = "New Consultation"
+
+class ChatSessionCreate(ChatSessionBase):
+    pass
+
+class ChatSession(ChatSessionBase):
+    id: str
+    user_id: int
+    created_at: datetime
+    updated_at: Optional[datetime]
+    messages: List[ChatMessage] = []
+
+    class Config:
+        from_attributes = True
