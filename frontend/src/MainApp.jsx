@@ -329,7 +329,21 @@ function ChatInterface() {
                 rehypePlugins={[rehypeKatex]}
                 className="prose prose-sm prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-black/50 prose-pre:border prose-pre:border-white/10 break-words"
               >
-                {m.content}
+                {/* Preprocess logic: Ensure LaTeX blocks are dollar-wrapped */}
+                {(() => {
+                  if (!m.content) return "";
+                  // 1. Fix standard LaTeX block/inline delimiters to Dollar signs for remark-math
+                  let processed = m.content
+                    .replace(/\\\[([\s\S]*?)\\\]/g, '$$$1$$') // \[ ... \] -> $$ ... $$
+                    .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$'); // \( ... \) -> $ ... $
+
+                  // 2. Heuristic: Wrap common naked math commands if they aren't already wrapped
+                  // This is aggressive but needed if AI just outputs "\frac{1}{2}"
+                  // Look for backslash followed by command, not inside $
+                  // (Simpler approach: Just rely on delimiters first. If user wants aggressive, we add more).
+                  // For now, let's just clean newlines in equations.
+                  return processed;
+                })()}
               </ReactMarkdown>
             </div>
           </motion.div>
