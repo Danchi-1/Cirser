@@ -24,16 +24,46 @@ class ReasoningEngine:
             return response.json()["choices"][0]["message"]["content"]
 
     def _extract_json(self, content: str) -> dict:
+        import re
         try:
+            # 1. Isolate JSON block
             if "```json" in content:
                 content = content.split("```json")[1].split("```")[0].strip()
             elif "```" in content:
                 content = content.split("```")[1].split("```")[0].strip()
             
+            # 2. Heuristic Fix for LaTeX backslashes (common LLM error)
+            # Replace single backslashes followed by non-escaped chars with double backslashes
+            # This is risky but often necessary for \frac, \times etc in JSON values
+            # Pattern: look for \ followed by anything other than " or \ or / or b,f,n,r,t,u
+            # But simpler: The LLM usually means literal backslash for LaTeX.
+            # We can try parsing. If it fails, try escaping backslashes.
+            
             start = content.find("{")
             end = content.rfind("}") + 1
             if start != -1 and end != 0:
-                return json.loads(content[start:end])
+                json_candidate = content[start:end]
+                try:
+                    return json.loads(json_candidate)
+                except json.JSONDecodeError:
+                    # Fallback: Try to escape single backslashes that look like LaTeX
+                    # Simplest robust fix: If it contains LaTeX-like patterns, strictly escape them?
+                    # Or just brute-force replace single \ with \\ if it's not already escaped?
+                    # Let's try a regex replace for typical starting control words
+                    # captures \ and a letter, replace with \\ and letter
+                    # This is hard to do perfectly safely.
+                    # BETTER: Just sanitize carefully. 
+                    # Let's just try replacing ALL single backslashes if the first parse failed, 
+                    # assuming the error was due to LaTeX.
+                    fixed_json = json_candidate.replace('\\', '\\\\')
+                    # But wait, \\ becomes \\\\ (valid). \n becomes \\n (literal \n). 
+                    # This might break real newlines. 
+                    # Compromise: Fix specific LaTeX commands?
+                    # actually, let's just create a raw string logic.
+                    # Best attempt:
+                    fixed_json = re.sub(r'(?<!\\)\\(?!["\\/bfnrtu])', r'\\\\', json_candidate)
+                    return json.loads(fixed_json)
+                    
             raise ValueError("No JSON found")
         except Exception as e:
             raise ValueError(f"JSON Parsing Failed: {str(e)}")
@@ -42,9 +72,6 @@ class ReasoningEngine:
         reasoning_trace = []
         
         # --- PHASE 0: INPUT FIREWALL ---
-        # Heuristic check: Is this "engineering-like"?
-        # For now, we'll be permissive but could add an AI classifier here.
-        # Strict gate: If it's just "hello", "hi", refuse.
         non_engineering_keywords = ["hello", "hi", "how are you", "love", "weather"]
         if len(user_query.split()) < 2 and user_query.lower() in non_engineering_keywords:
              return {
@@ -86,14 +113,14 @@ class ReasoningEngine:
             # --- PHASE 4: VERIFICATION & EXPLANATION ---
             final_explanation = await self._phase_4_explanation(user_query, context_data, symbolic_plan, result_val, token)
             
-            # Construct Final Legacy-Compatible Plan
             final_plan = {
-                "action": "SOLVE_SYMBOLIC", # Frontend expects this to show math
+                "action": "SOLVE_SYMBOLIC", 
                 "thought": final_explanation,
                 "equation": symbolic_plan['equation'],
                 "parameter_definition": context_data['parameter_definition'],
                 "physical_interpretation": context_data['physical_interpretation'],
-                "applicability_check": context_data['applicability_check']
+                "applicability_check": context_data['applicability_check'],
+                "variable": symbolic_plan['variables'] # Pass variables for Viz
             }
 
             return {
@@ -101,14 +128,22 @@ class ReasoningEngine:
                 "plan": final_plan,
                 "result": result_val,
                 "reasoning_steps": reasoning_trace,
-                "candidates": [] # Context candidates could be passed here
+                "candidates": [] 
             }
 
         except Exception as e:
             # Fail Gracefully with Trace
+            # Clean up the error message for the user
+            error_msg = str(e)
+            if "JSON" in error_msg:
+                user_msg = "Format Error: AI produced invalid engineering notation. Retrying usually fixes this."
+            else:
+                user_msg = f"Processing Interrupted: {error_msg}"
+                
             return {
                 "status": "error",
-                "message": f"Pipeline Error: {str(e)}",
+                "message": user_msg,
+                "debug_error": error_msg, # For developer logs
                 "reasoning_steps": reasoning_trace
             }
 
@@ -126,6 +161,7 @@ class ReasoningEngine:
         {candidate_str}
         
         OUTPUT JSON (EngineeringContext):
+        IMPORTANT: Single backslashes in strings MUST be escaped (e.g. use "\\\\frac" not "\\frac").
         {{
             "parameter_definition": "Formal def (e.g. Z11 = V1/I1 | I2=0)",
             "physical_interpretation": "Physical meaning",
@@ -157,6 +193,7 @@ class ReasoningEngine:
         - If numeric, use "EVAL, var=val".
         
         OUTPUT JSON (SymbolicPlan):
+        IMPORTANT: Single backslashes in strings MUST be escaped (e.g. use "\\\\frac" not "\\frac").
         {{
             "equation": "Z_a + Z_b",
             "variables": "EVAL, Z_a=10, Z_b=20"
