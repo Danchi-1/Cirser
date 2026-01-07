@@ -39,7 +39,7 @@ function SimulationStack() {
         {/* Placeholder Nodes with Glow */}
         <group>
           {simState.nodes && simState.nodes.map((node, i) => (
-            <mesh key={i} position={[i * 3 - 3, 0.5, 0]}>
+            <mesh key={i} position={node.position || [i * 3 - 3, 0.5, 0]}>
               <boxGeometry args={[1, 1, 1]} />
               <meshStandardMaterial
                 color="#0ea5e9"

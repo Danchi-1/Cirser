@@ -6,6 +6,10 @@
         {
             "source": "/api/v1/:path*",
             "destination": "https://your-railway-backend-url.up.railway.app/api/v1/:path*"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "/index.html"
         }
     ]
 }
