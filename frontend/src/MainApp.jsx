@@ -237,7 +237,44 @@ function ChatInterface() {
       if (res.data.status === 'success') {
         const plan = res.data.plan;
 
-        let displayContent = plan.thought;
+        // --- VISUALIZATION BRIDGE ---
+        // Extract entities to visualize from the plan
+        // 1. From Variables (e.g. "EVAL, Z_a=10")
+        const newNodes = [];
+
+        if (plan.variable && plan.variable.startsWith("EVAL")) {
+          // Parse "EVAL, var=val, var2=val2"
+          const pairs = plan.variable.replace("EVAL", "").split(",").map(s => s.trim()).filter(s => s);
+          pairs.forEach((p, i) => {
+            const [k, v] = p.split("=");
+            if (k) newNodes.push({ id: k, val: v });
+          });
+        }
+
+        // 2. From Parameter Definition (e.g. "Z11")
+        if (plan.parameter_definition) {
+          if (typeof plan.parameter_definition === 'object') {
+            Object.keys(plan.parameter_definition).forEach(k => {
+              if (!newNodes.find(n => n.id === k)) newNodes.push({ id: k, val: '?' });
+            });
+          }
+        }
+
+        // Update Simulation State if we found anything
+        if (newNodes.length > 0) {
+          useStore.getState().updateSimState({
+            nodes: newNodes.map((n, i) => ({
+              id: n.id,
+              position: [(i - newNodes.length / 2) * 2, 0.5, 0], // Spread them out
+              type: 'component',
+              value: n.val
+            })),
+            branches: [],
+            params: {}
+          });
+        }
+
+        const finalContent = plan.thought || "Analysis complete.";
 
         // Helper to format values that might be objects
         const formatValue = (val) => {
@@ -477,14 +514,14 @@ export default function MainApp() {
         <RuleStack />
 
         {/* Bottom Layer: Main Interaction Zone */}
-        <div className="flex gap-6 h-[40vh] items-end pointer-events-auto">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6 h-[85vh] md:h-[40vh] items-stretch md:items-end pointer-events-auto pb-6 md:pb-0">
           {/* Chat takes majority */}
-          <div className="flex-[2] h-full">
+          <div className="flex-1 md:flex-[2] h-1/2 md:h-full min-h-0">
             <ChatInterface />
           </div>
 
           {/* Controls takes minority */}
-          <div className="flex-1 h-3/4">
+          <div className="flex-none md:flex-1 h-auto md:h-3/4 min-h-0">
             <ControlStack />
           </div>
         </div>
