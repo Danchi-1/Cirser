@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Grid, Environment, ContactShadows } from '@react-three/drei'
+import { OrbitControls, Grid, Environment, ContactShadows, Html } from '@react-three/drei'
 import { motion, AnimatePresence } from 'framer-motion'
 import useStore from './store/useStore'
 import { Send, Cpu, Activity, Database, AlertCircle, RefreshCw, ChevronDown, ChevronUp, CheckCircle2, AlertTriangle, Menu, X, Box, MessageSquare, RotateCw, User, Settings, LogOut, Clock, Play, BookOpen, Zap, ChevronRight } from 'lucide-react';
