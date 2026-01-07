@@ -274,48 +274,12 @@ function ChatInterface() {
 
         const finalContent = plan.thought || "Analysis complete.";
 
-        // Helper to format values that might be objects
-        const formatValue = (val) => {
-          if (typeof val === 'object' && val !== null) {
-            return '\n' + Object.entries(val).map(([k, v]) => `  - **${k}:** ${v}`).join('\n');
-          }
-          return val;
-        };
-
-        // Append Engineering Audit details if present
-        if (plan.parameter_definition || plan.applicability_check) {
-          displayContent += `\n\n---\n\n### 🛡️ Engineering Audit\n\n`;
-          if (plan.parameter_definition) displayContent += `> **Definition:** ${formatValue(plan.parameter_definition)}\n\n`;
-          if (plan.physical_interpretation) displayContent += `> **Physics:** ${formatValue(plan.physical_interpretation)}\n\n`;
-
-          if (plan.applicability_check) {
-            displayContent += `**Rule Check:**\n`;
-            if (plan.applicability_check.justification) displayContent += `- *Justification:* ${plan.applicability_check.justification}\n`;
-            displayContent += `- **Conditions Met:** ${plan.applicability_check.conditions_met ? '✅ Yes' : '❌ No'}\n`;
-          }
-        }
-
-        // Append Reasoning Trace (Calculation Steps)
-        if (res.data.reasoning_steps && res.data.reasoning_steps.length > 0) {
-          displayContent += `\n\n---\n\n### 🔢 Calculation Steps\n\n`;
-          res.data.reasoning_steps.forEach(step => {
-            displayContent += `**Step ${step.step} (${step.phase}):** ${step.thought}\n`;
-            if (step.equation && step.result) {
-              displayContent += `> $${step.equation} = ${step.result}$\n\n`;
-            } else {
-              displayContent += `\n`;
-            }
-          });
-        }
-
-        if (plan.action === 'SOLVE_SYMBOLIC') {
-          // This fallback is mostly for single-step solves without EXPLAIN
-          displayContent += `\n\n**Equation:** $${plan.equation}$\n\n**Result:** $${res.data.result}$`;
-        }
-
+        // Pass structured data to the UI components
         addMessage({
           role: 'assistant',
-          content: displayContent
+          content: finalContent,
+          audit: plan,
+          steps: res.data.reasoning_steps
         });
 
         if (res.data.candidates) {
