@@ -112,9 +112,98 @@ function RuleStack() {
       </AnimatePresence>
     </div>
   )
+    </div >
+  )
 }
 
-// --- 3. Chat Interface (Bottom Left) ---
+// --- 2.5 Thinking Process (Collapsible) ---
+function ThinkingProcess({ audit, steps }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Helper to format values
+  const formatValue = (val) => {
+    if (typeof val === 'object' && val !== null) {
+      return Object.entries(val).map(([k, v]) => <div key={k} className="ml-2">• <span className="font-semibold text-slate-400">{k}:</span> {v}</div>);
+    }
+    return val;
+  };
+
+  if (!audit && (!steps || steps.length === 0)) return null;
+
+  return (
+    <div className="mb-4 rounded-xl overflow-hidden border border-cyan-500/20 bg-cyan-950/10">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between p-3 text-xs font-mono text-cyan-400 hover:bg-cyan-500/5 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <Activity size={14} />
+          <span>ENGINEERING PROCESS</span>
+        </div>
+        <ChevronRight size={14} className={`transition-transformDuration-200 ${isOpen ? 'rotate-90' : ''}`} />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="p-4 pt-0 text-sm space-y-4 border-t border-cyan-500/20">
+              {/* Audit Phase */}
+              {audit && (audit.parameter_definition || audit.applicability_check) && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Phase 1: Definition & Rules</h4>
+                  <div className="bg-black/20 p-3 rounded-lg border border-white/5 space-y-2">
+                    {audit.parameter_definition && (
+                      <div><span className="text-cyan-200 font-mono text-xs">DEF:</span> <span className="text-slate-300">{formatValue(audit.parameter_definition)}</span></div>
+                    )}
+                    {audit.physical_interpretation && (
+                      <div><span className="text-cyan-200 font-mono text-xs">PHY:</span> <span className="text-slate-300">{formatValue(audit.physical_interpretation)}</span></div>
+                    )}
+                    {audit.applicability_check && (
+                      <div className="mt-2 pt-2 border-t border-white/5">
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className={audit.applicability_check.conditions_met ? "text-emerald-400" : "text-red-400"}>
+                            {audit.applicability_check.conditions_met ? "✔ RULES MET" : "❌ RULES VIOLATED"}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Steps Phase */}
+              {steps && steps.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Phase 2-3: Derivation</h4>
+                  <div className="space-y-2">
+                    {steps.map((step, idx) => (
+                      <div key={idx} className="bg-black/20 p-3 rounded-lg border border-white/5">
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="text-xs font-mono text-slate-500">STEP {step.step} ({step.phase})</span>
+                        </div>
+                        <p className="text-slate-300 mb-2">{step.thought}</p>
+                        {step.equation && step.result && (
+                          <div className="font-mono text-xs bg-black/40 p-2 rounded text-cyan-100 overflow-x-auto">
+                            {step.equation} = {step.result}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 function ChatInterface() {
   const { messages, addMessage, setActiveRules, token } = useStore();
   const [input, setInput] = useState("");
@@ -230,10 +319,16 @@ function ChatInterface() {
               ? 'bg-cyan-600/20 border border-cyan-500/30 text-cyan-50 rounded-br-none'
               : 'bg-slate-800/50 border border-slate-700 text-slate-200 rounded-bl-none'
               }`}>
+
+              {/* Engineering Process Collapsible */}
+              {m.role === 'assistant' && (
+                <ThinkingProcess audit={m.audit} steps={m.steps} />
+              )}
+
               <ReactMarkdown
                 remarkPlugins={[remarkMath]}
                 rehypePlugins={[rehypeKatex]}
-                className="prose prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-black/50 prose-pre:border prose-pre:border-white/10"
+                className="prose prose-sm prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-black/50 prose-pre:border prose-pre:border-white/10 break-words"
               >
                 {m.content}
               </ReactMarkdown>

@@ -47,7 +47,14 @@ class ReasoningEngine:
         # Strict gate: If it's just "hello", "hi", refuse.
         non_engineering_keywords = ["hello", "hi", "how are you", "love", "weather"]
         if len(user_query.split()) < 2 and user_query.lower() in non_engineering_keywords:
-             return {"status": "success", "plan": {"action": "REFUSE", "thought": "Non-technical query refused."}, "reasoning_steps": []}
+             return {
+                 "status": "success", 
+                 "plan": {
+                     "action": "REFUSE", 
+                     "thought": "As engineers, why say hello? Let's get straight to work."
+                 }, 
+                 "reasoning_steps": []
+             }
 
         try:
             # --- PHASE 1: CONTEXT & DEFINITION ---
