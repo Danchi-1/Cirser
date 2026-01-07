@@ -485,10 +485,13 @@ function ControlStack() {
   )
 }
 
+import { useNavigate } from 'react-router-dom'
+
 // --- 5. Header / User Menu (Top Right) ---
 function UserMenu() {
   const { logout, token, user, fetchUser } = useStore()
   const [isOpen, setIsOpen] = useState(false)
+  const navigate = useNavigate()
 
   // Fetch user on mount if we have a token but no user data
   useEffect(() => {
