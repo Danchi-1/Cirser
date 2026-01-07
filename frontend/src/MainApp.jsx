@@ -512,7 +512,7 @@ export default function MainApp() {
         <RuleStack />
 
         {/* Bottom Layer: Main Interaction Zone */}
-        <div className="flex flex-col md:flex-row gap-4 md:gap-6 h-[85vh] md:h-[40vh] items-stretch md:items-end pointer-events-auto pb-6 md:pb-0">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6 h-[75vh] md:h-[40vh] items-stretch md:items-end pointer-events-auto pb-6 md:pb-0">
           {/* Chat takes majority */}
           <div className="flex-1 md:flex-[2] h-1/2 md:h-full min-h-0">
             <ChatInterface />

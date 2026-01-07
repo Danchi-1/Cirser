@@ -163,8 +163,8 @@ class ReasoningEngine:
         OUTPUT JSON (EngineeringContext):
         IMPORTANT: Single backslashes in strings MUST be escaped (e.g. use "\\\\frac" not "\\frac").
         {{
-            "parameter_definition": "Formal def (e.g. Z11 = V1/I1 | I2=0)",
-            "physical_interpretation": "Physical meaning",
+            "parameter_definition": "Standard Formula (e.g. T-Network A = 1 + Z_shunt/Z_series) OR Formal def",
+            "physical_interpretation": "Topology Identification (e.g. Bridge-T converted to T-Network)",
             "candidate_rules": ["List IDs"],
             "selected_rule_id": "Best Rule ID",
             "rule_rejection_reasoning": "Why others failed",
@@ -192,11 +192,16 @@ class ReasoningEngine:
         - Output variable assignments in 'variables' field (comma separated).
         - If numeric, use "EVAL, var=val".
         
+        CRITICAL CONSTRAINTS:
+        1. DO NOT use port variables (V1, I1, V2, I2) in the equation.
+        2. Express the result ONLY in terms of component impedances (Z1, Z2, R1, etc.) or intermediate values defined in 'variables'.
+        3. If using a standard formula (e.g. T-Network A = 1 + Zs/Zp), use that instead of First Principles derivation.
+        
         OUTPUT JSON (SymbolicPlan):
         IMPORTANT: Single backslashes in strings MUST be escaped (e.g. use "\\\\frac" not "\\frac").
         {{
-            "equation": "Z_a + Z_b",
-            "variables": "EVAL, Z_a=10, Z_b=20"
+            "equation": "1 + (Z_c + Z_3) / Z_b",
+            "variables": "EVAL, Z_c=0.833, Z_3=10, Z_b=3.33"
         }}
         """
         
