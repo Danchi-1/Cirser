@@ -3,7 +3,7 @@ import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Grid, Environment, ContactShadows } from '@react-three/drei'
 import { motion, AnimatePresence } from 'framer-motion'
 import useStore from './store/useStore'
-import { Send, Cpu, Activity, Database, AlertCircle, RefreshCw, ChevronDown, ChevronUp, CheckCircle2, AlertTriangle, Menu, X, Box, MessageSquare, RotateCw } from 'lucide-react';
+import { Send, Cpu, Activity, Database, AlertCircle, RefreshCw, ChevronDown, ChevronUp, CheckCircle2, AlertTriangle, Menu, X, Box, MessageSquare, RotateCw, User, Settings, LogOut, Clock, Play, BookOpen, Zap, ChevronRight } from 'lucide-react';
 import axios from 'axios'
 import ReactMarkdown from 'react-markdown'
 import remarkMath from 'remark-math'
