@@ -112,8 +112,6 @@ function RuleStack() {
       </AnimatePresence>
     </div>
   )
-    </div >
-  )
 }
 
 // --- 2.5 Thinking Process (Collapsible) ---
